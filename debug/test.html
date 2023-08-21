@@ -1,28 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <script src="../packages/vue//dist/vue.global.js"></script>
+  <!-- <script src="../packages/vue//dist/vue.global.js"></script> -->
 </head>
+
 <body>
   <div id="app">
     <button @click="count++">{{ count }}</button>
   </div>
   <script>
-    const { createApp, ref, onMounted } = Vue
-    
-    const app = createApp({
-      setup() {
-        const count = ref(0)
+    // 问题：
+    // 1. 如果对象是嵌套的，如何对子孙对象进行代理呢 ？
+    //    解决方法：在 get 拦截器中 判断当前访问的值是否是对象类型，
+    //             如果是，则将其转换为 proxy
+    //             显然，这是一种惰性处理；相比vue2 直接递归地处理 data 数据，vue3 这种处理方式更加高效
 
-        return {
-          count,
+    const data = {
+      foo: 'bar',
+      info: {
+        name: 'wang',
+      },
+    }
+
+    let activeFn
+
+    function effect(fn) {
+      activeFn = fn
+      fn()
+      activeFn = null // reset
+    }
+
+    const bucket = new WeakMap()
+
+    function reactive(val) {
+      // debugger
+      const proxy = new Proxy(val, {
+        get(target, prop, receiver) {
+          const result = Reflect.get(target, prop, receiver)
+          // 如果访问的是一个对象，则将该对象转换为 proxy 并返回
+          // !!! 注意：这个一定需要放在 判断 !activeFn 之前
+          if (isObject(result)) {
+            return reactive(result)
+          }
+          if (!activeFn) {
+            return result
+          }
+          let targetMap = bucket.get(target)
+          if (!targetMap) {
+            targetMap = new Map()
+            bucket.set(target, targetMap)
+          }
+          let set = targetMap.get(prop)
+          if (!set) {
+            set = new Set()
+            targetMap.set(prop, set)
+          }
+          set.add(activeFn) // 收集依赖
+          return result
+        },
+        set(target, prop, newVal, receiver) {
+          Reflect.set(target, prop, newVal, receiver)
+          const targetMap = bucket.get(target)
+          if (!targetMap) return
+          const set = targetMap.get(prop)
+          if (!set) return
+          // 触发依赖更新
+          set.forEach(fn => fn())
+
+          return true
         }
-      }
+      })
+      return proxy
+    }
+
+    function isObject(val) {
+      return val && typeof val === 'object'
+    }
+
+    const proxy = reactive(data)
+
+    let result
+
+    effect(() => {
+      result = proxy.info.name
     })
-    app.mount('#app')
+    console.log(result); // wang
+
+    proxy.info.name = 'ethan'
+
+    console.log(result); // ethan
+
+    console.log(proxy.info);  // This is a proxy
   </script>
 </body>
+
 </html>
