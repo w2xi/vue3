@@ -23,9 +23,13 @@ let result
 
 effect(() => {
   result = proxy.ok ? proxy.name : '-'
-  console.log(result, '-----')
+  console.log(result)
 })
 
-// proxy.ok = false
+proxy.ok = false // 副作用函数被执行
 
-// proxy.name = 'ethan' // 副作用函数执行了
+proxy.name = 'ethan' // 副作用函数不会执行
+
+// ouptut:
+// wang
+// -

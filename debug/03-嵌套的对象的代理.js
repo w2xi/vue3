@@ -1,5 +1,4 @@
-// 问题：
-// 1. 如果对象是嵌套的，如何对子孙对象进行代理呢 ？
+// ? 问题： 如果对象是嵌套的，如何对子孙对象进行代理呢 ？
 //    解决方法：在 get 拦截器中 判断当前访问的值是否是对象类型，
 //             如果是，则将其转换为 proxy
 //             显然，这是一种惰性处理；相比vue2 直接递归地处理 data 数据，vue3 这种处理方式更加高效
@@ -74,11 +73,11 @@ const proxy = reactive(data)
 let result
 
 effect(() => {
-  result = proxy.foo
+  result = proxy.info.name
 })
 
 console.log(result) // wang
 
-proxy.foo = 'ethan'
+proxy.info.name = 'ethan'
 
-console.log(proxy.foo) // ethan
+console.log(proxy.info.name) // ethan
