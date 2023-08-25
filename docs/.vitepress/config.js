@@ -3,7 +3,6 @@ export default {
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [{ text: '首页', link: '/prerequisites/debug' }],
-
     sidebar: [
       {
         text: '前置知识',
@@ -11,7 +10,7 @@ export default {
       },
       {
         text: '响应式原理',
-        items: [{ text: '', link: '/markdown-examples' }]
+        items: [{ text: '副作用函数', link: '/reactivity/effect-fn' }]
       },
       {
         text: 'Examples',
@@ -21,7 +20,6 @@ export default {
         ]
       }
     ],
-
     socialLinks: [{ icon: 'github', link: 'https://github.com/w2xi/vue3' }]
   }
 }
