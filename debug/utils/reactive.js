@@ -161,12 +161,21 @@ export function watch(source, cb, options = {}) {
     // 递归读取对象属性
     getter = () => traverse(source)
   }
+  // 存储用户注册的过期回调
+  let cleanup
+  function onInvalidate(fn) {
+    cleanup = fn
+  }
 
   // 提取 scheduler 为一个独立的函数
   const job = () => {
     // 执行副作用函数 得到新值
     newValue = effectFn()
-    cb(newValue, oldValue)
+    if (cleanup) {
+      // 调用过期回调
+      cleanup()
+    }
+    cb(newValue, oldValue, onInvalidate)
     // 更新旧值
     oldValue = newValue
   }
