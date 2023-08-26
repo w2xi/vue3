@@ -151,7 +151,7 @@ export function computed(fn) {
  * @param {Object|Function} source 对象或者getter
  * @param {Function} cb 回调函数
  */
-export function watch(source, cb) {
+export function watch(source, cb, options = {}) {
   // 定义旧值和新值
   let oldValue, newValue
   let getter
@@ -161,16 +161,34 @@ export function watch(source, cb) {
     // 递归读取对象属性
     getter = () => traverse(source)
   }
+
+  // 提取 scheduler 为一个独立的函数
+  const job = () => {
+    // 执行副作用函数 得到新值
+    newValue = effectFn()
+    cb(newValue, oldValue)
+    // 更新旧值
+    oldValue = newValue
+  }
+
   const effectFn = effect(getter, {
     // 懒执行
     lazy: true,
-    scheduler(effectFn) {
-      // 执行副作用函数 得到新值
-      newValue = effectFn()
-      cb(newValue, oldValue)
-      // 更新旧值
-      oldValue = newValue
+    scheduler() {
+      // flush: 'pre'(组件更新前) | 'post'(组件更新后) | sync (同步，默认方式)
+      if (options.flush === 'post') {
+        const p = Promise.resolve()
+        p.then(job)
+      } else {
+        job()
+      }
     }
   })
-  oldValue = effectFn()
+
+  if (options.immediate) {
+    // 表示立即执行回调
+    job()
+  } else {
+    oldValue = effectFn()
+  }
 }

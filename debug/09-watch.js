@@ -19,7 +19,16 @@ watch(
     console.log(value, oldValue)
   }
 )
-
 // 监听 proxy 的变化，并触发回调
-
 proxy.foo++
+
+console.log('------- line -------')
+
+// 立即执行的 watch
+watch(
+  () => proxy.foo,
+  (newVal, oldVal) => {
+    console.log(newVal, oldVal)
+  },
+  { immediate: true }
+)
