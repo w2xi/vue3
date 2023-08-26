@@ -1,4 +1,4 @@
-import { isObject } from './index.js'
+import { isObject, traverse } from './index.js'
 
 const bucket = new WeakMap()
 
@@ -44,11 +44,11 @@ export function reactive(val) {
   const proxy = new Proxy(val, {
     get(target, prop, receiver) {
       const result = Reflect.get(target, prop, receiver)
+      track(target, prop)
       // 如果访问的是一个对象，则将该对象转换为 proxy
       if (isObject(result)) {
         return reactive(result)
       }
-      track(target, prop)
       return result
     },
     set(target, prop, newVal, receiver) {
@@ -144,4 +144,33 @@ export function computed(fn) {
     }
   }
   return obj
+}
+
+/**
+ * 观测的响应式数据变化，执行回调
+ * @param {Object|Function} source 对象或者getter
+ * @param {Function} cb 回调函数
+ */
+export function watch(source, cb) {
+  // 定义旧值和新值
+  let oldValue, newValue
+  let getter
+  if (typeof source === 'function') {
+    getter = source
+  } else {
+    // 递归读取对象属性
+    getter = () => traverse(source)
+  }
+  const effectFn = effect(getter, {
+    // 懒执行
+    lazy: true,
+    scheduler(effectFn) {
+      // 执行副作用函数 得到新值
+      newValue = effectFn()
+      cb(newValue, oldValue)
+      // 更新旧值
+      oldValue = newValue
+    }
+  })
+  oldValue = effectFn()
 }
