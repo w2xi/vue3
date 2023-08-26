@@ -1,3 +1,5 @@
+import { isObject } from './index.js'
+
 const bucket = new WeakMap()
 
 // 当前注册（激活）的副作用函数
@@ -7,7 +9,7 @@ let activeEffect
 const effectStack = []
 
 // 用来注册副作用函数
-function effect(fn, options = {}) {
+export function effect(fn, options = {}) {
   const effectFn = () => {
     cleanup(effectFn)
     activeEffect = effectFn
@@ -20,10 +22,11 @@ function effect(fn, options = {}) {
   // activeEffect.deps 用来存储与该副作用函数相关联的依赖集合
   effectFn.deps = []
   effectFn.options = options
-  // 执行副作用函数
-  const result = effectFn()
-
-  return result
+  if (!options.lazy) {
+    // 执行副作用函数
+    effectFn()
+  }
+  return effectFn
 }
 
 // 清除依赖关系
@@ -37,7 +40,7 @@ function cleanup(effectFn) {
   effectFn.deps.length = 0
 }
 
-function reactive(val) {
+export function reactive(val) {
   const proxy = new Proxy(val, {
     get(target, prop, receiver) {
       const result = Reflect.get(target, prop, receiver)
@@ -62,7 +65,7 @@ function reactive(val) {
 }
 
 // 在 get 拦截器中调用 track 函数追踪变化
-function track(target, prop) {
+export function track(target, prop) {
   if (!activeEffect) return
   let depsMap = bucket.get(target)
   if (!depsMap) {
@@ -77,7 +80,7 @@ function track(target, prop) {
 }
 
 // 在 set 拦截器中调用 trigger 函数触发变化
-function trigger(target, prop) {
+export function trigger(target, prop) {
   const depsMap = bucket.get(target)
   if (!depsMap) return
   const effects = depsMap.get(prop)
@@ -102,8 +105,43 @@ function trigger(target, prop) {
   })
 }
 
-function isObject(val) {
-  return val && typeof val === 'object'
-}
+// 计算属性
+export function computed(fn) {
+  // 缓存上一次计算的值
+  let value
+  // 标识是否是脏数据. 如果是脏数据需要重新计算求值，否则从缓存拿
+  let dirty = true
+  const getter = typeof fn === 'function' ? fn : fn.get
+  const setter = fn.set
+  let obj
 
-export { reactive, effect }
+  const effectFn = effect(getter, {
+    // 依赖项发生变化 执行调度函数
+    scheduler() {
+      if (!dirty) {
+        dirty = true
+        // 当计算属性依赖的响应式数据变化时，手动调用 trigger 触发响应 执行副作用函数
+        trigger(obj, 'value')
+      }
+    },
+    lazy: true // 懒执行 (副作用函数)
+  })
+
+  obj = {
+    get value() {
+      if (dirty) {
+        value = effectFn()
+        dirty = false
+      }
+      // 当读取 value 时，手动追踪依赖
+      track(obj, 'value')
+      return value
+    },
+    set value(newVal) {
+      if (typeof setter === 'function') {
+        setter(newVal)
+      }
+    }
+  }
+  return obj
+}
