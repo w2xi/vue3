@@ -2,7 +2,7 @@
 // 解决：当在副作用函数中更新 proxy.count 时，activeEffect 的值指向当前副作用函数，
 // 它和收集依赖的 副作用函数是同一个！！！这不就正好可以解决问题了么！
 
-import { reactive, effect } from './utils/reactive.js'
+import { reactive, effect } from '../utils/reactive.js'
 
 const data = {
   count: 0

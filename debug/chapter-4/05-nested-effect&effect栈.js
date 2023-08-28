@@ -2,7 +2,7 @@
 // !【Solution】: 副作用函数执行之后，使用 effectStack 副作用函数栈进行处理
 // ! 注意: 不能简单在地在副作用函数执行之后，重置 activeEffect = null，这会导致外层副作用 activeEffect 为 null，从而无法正确收集依赖
 
-import { reactive, effect } from './utils/reactive.js'
+import { reactive, effect } from '../utils/reactive.js'
 
 const data = {
   foo: 'bar',

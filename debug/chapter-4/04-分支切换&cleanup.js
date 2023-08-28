@@ -1,4 +1,4 @@
-import { reactive, effect } from './utils/reactive.js'
+import { reactive, effect } from '../utils/reactive.js'
 
 // 分支切换
 // 副作用函数内部存在三元表达式
