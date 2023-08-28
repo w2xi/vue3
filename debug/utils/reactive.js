@@ -1,6 +1,7 @@
-import { isObject, traverse } from './index.js'
+import { isObject, traverse, hasOwn } from './index.js'
 
 const bucket = new WeakMap()
+const ITERATE_KEY = Symbol()
 
 // 当前注册（激活）的副作用函数
 let activeEffect
@@ -56,9 +57,31 @@ export function reactive(val) {
         // 新旧值相等
         return true
       }
-      Reflect.set(target, prop, newVal, receiver)
-      trigger(target, prop)
-      return true // 这里一定要加上返回值 且为 truthy 的值 不然 nodejs 会报错 坑！！！
+      const type = hasOwn(target, prop) ? 'SET' : 'ADD'
+      const res = Reflect.set(target, prop, newVal, receiver)
+      trigger(target, prop, type)
+      return res // 这里一定要加上返回值 Boolean值类型
+    },
+    // 拦截 prop in obj
+    has(target, prop) {
+      track(target, prop)
+      Reflect.has(target, prop)
+    },
+    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/ownKeys
+    // 拦截 for ... in | for ... of | Object.keys | Reflect.ownKeys | ...
+    ownKeys(target) {
+      track(target, ITERATE_KEY)
+      return Reflect.ownKeys(target)
+    },
+    deleteProperty(target, prop) {
+      const hadKey = hasOwn(target, prop)
+      // 执行删除操作
+      const res = Reflect.deleteProperty(target, prop)
+      if (res && hadKey) {
+        // 只有当被删除的属性是对象自己的属性并且成功删除时，才触发更新
+        trigger(target, prop, 'DELETE')
+      }
+      return res
     }
   })
   return proxy
@@ -80,20 +103,30 @@ export function track(target, prop) {
 }
 
 // 在 set 拦截器中调用 trigger 函数触发变化
-export function trigger(target, prop) {
+export function trigger(target, prop, type) {
   const depsMap = bucket.get(target)
   if (!depsMap) return
   const effects = depsMap.get(prop)
-  if (!effects) return
   // ! 解决无限循环问题
   const effectsToRun = new Set()
-  effects.forEach(effectFn => {
-    // ! 用来解决 在副作用函数中执行 proxy.count++ 类似问题，即
-    // ! 如果 trigger 触发执行的副作用函数和当前正在执行的副作用函数相同，则不触发执行
-    if (activeEffect !== effectFn) {
-      effectsToRun.add(effectFn)
-    }
-  })
+  effects &&
+    effects.forEach(effectFn => {
+      // ! 用来解决 在副作用函数中执行 proxy.count++ 类似问题，即
+      // ! 如果 trigger 触发执行的副作用函数和当前正在执行的副作用函数相同，则不触发执行
+      if (activeEffect !== effectFn) {
+        effectsToRun.add(effectFn)
+      }
+    })
+  // 只有操作类型是 `ADD` | `DELETE` 时，才触发与 ITERATE_KEY 相关联的副作用函数重新执行
+  if (type === 'ADD' || type === 'DELETE') {
+    const iterateEffects = depsMap.get(ITERATE_KEY)
+    iterateEffects &&
+      iterateEffects.forEach(effectFn => {
+        if (activeEffect !== effectFn) {
+          effectsToRun.add(effectFn)
+        }
+      })
+  }
   // 触发依赖更新
   effectsToRun.forEach(effectFn => {
     const options = effectFn.options
