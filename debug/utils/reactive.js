@@ -41,11 +41,14 @@ function cleanup(effectFn) {
   effectFn.deps.length = 0
 }
 
-export function reactive(val) {
-  const proxy = new Proxy(val, {
+export function reactive(obj) {
+  const proxy = new Proxy(obj, {
     get(target, prop, receiver) {
-      const result = Reflect.get(target, prop, receiver)
+      if (prop === 'raw') {
+        return target
+      }
       track(target, prop)
+      const result = Reflect.get(target, prop, receiver)
       // 如果访问的是一个对象，则将该对象转换为 proxy
       if (isObject(result)) {
         return reactive(result)
@@ -53,14 +56,18 @@ export function reactive(val) {
       return result
     },
     set(target, prop, newVal, receiver) {
-      if (target[prop] === newVal) {
-        // 新旧值相等
-        return true
-      }
+      const oldVal = target[prop]
       const type = hasOwn(target, prop) ? 'SET' : 'ADD'
       const res = Reflect.set(target, prop, newVal, receiver)
-      trigger(target, prop, type)
-      return res // 这里一定要加上返回值 Boolean值类型
+
+      if (target === receiver.raw) {
+        // 说明 receiver 是 target 的代理对象
+        if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
+          // 排除 NaN 类型
+          trigger(target, prop, type)
+        }
+      }
+      return res // 一定要有返回值: Boolean 类型
     },
     // 拦截 prop in obj
     has(target, prop) {
