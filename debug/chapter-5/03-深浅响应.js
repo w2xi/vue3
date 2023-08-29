@@ -3,7 +3,7 @@ import { reactive, effect, shallowReactive } from '../utils/reactive.js'
 const data = {
   foo: {
     deep: 1,
-    shallow: 1,
+    shallow: 1
   }
 }
 // 深响应
@@ -17,11 +17,10 @@ effect(() => {
 
 deepProxy.foo.deep = 2
 
-console.log('-------------------');
+console.log('-------------------')
 
 effect(() => {
   console.log(shallowProxy.foo.shallow)
 })
 
 shallowProxy.foo.shallow = 2
-
