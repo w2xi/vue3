@@ -42,15 +42,33 @@ function cleanup(effectFn) {
 }
 
 export function reactive(obj) {
+  return createReactive(obj)
+}
+export function shallowReactive(obj) {
+  return createReactive(obj, true)
+}
+
+/**
+ * 将对象转为响应式对象
+ * @param {Object} obj 代理对象
+ * @param {Boolean} isShallow 是否是浅响应
+ * @returns
+ */
+function createReactive(obj, isShallow = false) {
   const proxy = new Proxy(obj, {
     get(target, prop, receiver) {
       if (prop === 'raw') {
         return target
       }
-      track(target, prop)
       const result = Reflect.get(target, prop, receiver)
-      // 如果访问的是一个对象，则将该对象转换为 proxy
+      track(target, prop)
+
+      if (isShallow) {
+        // 浅响应
+        return result
+      }
       if (isObject(result)) {
+        // 如果访问的是一个对象，则将该对象转换为 proxy
         return reactive(result)
       }
       return result
