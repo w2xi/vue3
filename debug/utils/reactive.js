@@ -48,32 +48,46 @@ export function shallowReactive(obj) {
   return createReactive(obj, true)
 }
 
+export function readonly(obj) {
+  return createReactive(obj, false, true)
+}
+
+export function shallowReadonly(obj) {
+  return createReactive(obj, true, true)
+}
+
 /**
  * 将对象转为响应式对象
  * @param {Object} obj 代理对象
- * @param {Boolean} isShallow 是否是浅响应
+ * @param {Boolean} isShallow 是否浅响应
+ * @param {Boolean} isReadonly 是否只读
  * @returns
  */
-function createReactive(obj, isShallow = false) {
+function createReactive(obj, isShallow = false, isReadonly = false) {
   const proxy = new Proxy(obj, {
     get(target, prop, receiver) {
       if (prop === 'raw') {
         return target
       }
+      if (!isReadonly) {
+        // 非只读才建立响应式联系
+        track(target, prop)
+      }
       const result = Reflect.get(target, prop, receiver)
-      track(target, prop)
-
       if (isShallow) {
         // 浅响应
         return result
       }
       if (isObject(result)) {
-        // 如果访问的是一个对象，则将该对象转换为 proxy
-        return reactive(result)
+        return isReadonly ? readonly(result) : reactive(result)
       }
       return result
     },
     set(target, prop, newVal, receiver) {
+      if (isReadonly) {
+        console.warn(`prop "${prop}" in ${target} is readonly`)
+        return true
+      }
       const oldVal = target[prop]
       const type = hasOwn(target, prop) ? 'SET' : 'ADD'
       const res = Reflect.set(target, prop, newVal, receiver)
@@ -99,6 +113,10 @@ function createReactive(obj, isShallow = false) {
       return Reflect.ownKeys(target)
     },
     deleteProperty(target, prop) {
+      if (isReadonly) {
+        console.warn(`prop "${prop}" in ${target} is readonly`)
+        return true
+      }
       const hadKey = hasOwn(target, prop)
       // 执行删除操作
       const res = Reflect.deleteProperty(target, prop)
