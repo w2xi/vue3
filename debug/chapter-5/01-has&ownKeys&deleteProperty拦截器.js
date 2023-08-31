@@ -7,9 +7,12 @@ const data = {
 }
 const proxy = reactive(data)
 
+// 'foo' in obj // has 拦截函数
+// for key in obj // ownKeys 拦截函数
+// delete obj.prop // deleteProperty 拦截函数
+// for item of arr // 本质是调用了内部的迭代器，属于常规对象的访问(包括索引和length属性)
+
 effect(() => {
-  // 'foo' in proxy // has 拦截
-  // for ... in 循环 // ownKeys 拦截
   for (const key in proxy) {
     console.log(key)
   }

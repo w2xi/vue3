@@ -89,14 +89,20 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
         return true
       }
       const oldVal = target[prop]
-      const type = hasOwn(target, prop) ? 'SET' : 'ADD'
+      const type = Array.isArray(target)
+        ? Number(prop) < target.length
+          ? 'SET'
+          : 'ADD'
+        : hasOwn(target, prop)
+        ? 'SET'
+        : 'ADD'
       const res = Reflect.set(target, prop, newVal, receiver)
 
       if (target === receiver.raw) {
         // 说明 receiver 是 target 的代理对象
         if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
           // 排除 NaN 类型
-          trigger(target, prop, type)
+          trigger(target, prop, type, newVal)
         }
       }
       return res // 一定要有返回值: Boolean 类型
@@ -104,10 +110,10 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
     // 拦截 prop in obj
     has(target, prop) {
       track(target, prop)
-      Reflect.has(target, prop)
+      return Reflect.has(target, prop)
     },
     // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/ownKeys
-    // 拦截 for ... in | for ... of | Object.keys | Reflect.ownKeys | ...
+    // 拦截 for ... in | Object.keys | Reflect.ownKeys | ...
     ownKeys(target) {
       track(target, ITERATE_KEY)
       return Reflect.ownKeys(target)
@@ -146,7 +152,7 @@ export function track(target, prop) {
 }
 
 // 在 set 拦截器中调用 trigger 函数触发变化
-export function trigger(target, prop, type) {
+export function trigger(target, prop, type, newVal) {
   const depsMap = bucket.get(target)
   if (!depsMap) return
   const effects = depsMap.get(prop)
@@ -169,6 +175,29 @@ export function trigger(target, prop, type) {
           effectsToRun.add(effectFn)
         }
       })
+  }
+  if (type === 'ADD' && Array.isArray(target)) {
+    // 如果是新增操作且 target 是数组，说明需要触发 length 属性对应的 副作用函数的执行
+    const lengthEffects = depsMap.get('length')
+    lengthEffects &&
+      lengthEffects.forEach(effectFn => {
+        if (activeEffect !== effectFn) {
+          effectsToRun.add(effectFn)
+        }
+      })
+  }
+  if (Array.isArray(target) && prop === 'length') {
+    // 设置数组长度
+    depsMap.forEach((effects, key) => {
+      // 只有当 key 是数组索引且 key 大于等于新设置的数组长度时才会触发执行
+      if (+key === +key && key >= newVal) {
+        effects.forEach(effectFn => {
+          if (activeEffect !== effectFn) {
+            effectsToRun.add(effectFn)
+          }
+        })
+      }
+    })
   }
   // 触发依赖更新
   effectsToRun.forEach(effectFn => {
