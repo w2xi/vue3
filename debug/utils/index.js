@@ -21,19 +21,3 @@ export function traverse(obj, seen = new Set()) {
   }
   return obj
 }
-
-function createIterator(arr) {
-  let index = 0
-  return {
-    next() {
-      return index < arr.length
-        ? { value: arr[index++], done: false }
-        : { value: undefined, done: true }
-    }
-  }
-}
-
-const iterate = createIterator([1, 2])
-// console.log(iterate.next())
-// console.log(iterate.next())
-// console.log(iterate.next())

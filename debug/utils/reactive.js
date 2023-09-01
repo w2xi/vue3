@@ -69,8 +69,8 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
       if (prop === 'raw') {
         return target
       }
-      if (!isReadonly) {
-        // 非只读才建立响应式联系
+      if (!isReadonly && typeof prop !== 'symbol') {
+        // 非只读 且 非symbol类型 才建立响应式联系
         track(target, prop)
       }
       const result = Reflect.get(target, prop, receiver)
@@ -115,7 +115,9 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
     // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/ownKeys
     // 拦截 for ... in | Object.keys | Reflect.ownKeys | ...
     ownKeys(target) {
-      track(target, ITERATE_KEY)
+      console.log('xxxx')
+      // 如果目标对象 target 是数组，则使用 length 属性建立响应联系
+      track(target, Array.isArray(target) ? 'length' : ITERATE_KEY)
       return Reflect.ownKeys(target)
     },
     deleteProperty(target, prop) {
@@ -190,7 +192,7 @@ export function trigger(target, prop, type, newVal) {
     // 设置数组长度
     depsMap.forEach((effects, key) => {
       // 只有当 key 是数组索引且 key 大于等于新设置的数组长度时才会触发执行
-      if (+key === +key && key >= newVal) {
+      if (key >= newVal) {
         effects.forEach(effectFn => {
           if (activeEffect !== effectFn) {
             effectsToRun.add(effectFn)
