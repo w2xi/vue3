@@ -41,8 +41,16 @@ function cleanup(effectFn) {
   effectFn.deps.length = 0
 }
 
+const reactiveMap = new Map()
 export function reactive(obj) {
-  return createReactive(obj)
+  const existingProxy = reactiveMap.get(obj)
+  if (existingProxy) {
+    return existingProxy
+  }
+  const proxy = createReactive(obj)
+  reactiveMap.set(obj, proxy)
+
+  return proxy
 }
 export function shallowReactive(obj) {
   return createReactive(obj, true)
@@ -56,6 +64,40 @@ export function shallowReadonly(obj) {
   return createReactive(obj, true, true)
 }
 
+const arrayInstrumentations = {}
+;['includes', 'indexOf', 'lastIndexOf'].forEach(method => {
+  const originMethod = Array.prototype[method]
+  arrayInstrumentations[method] = function (...args) {
+    // 这里的 this 指向代理对象，现在代理对象中查找
+    let res = originMethod.apply(this, args)
+
+    if (res === false) {
+      // res 为 false 说明没找到
+      // 通过 this.raw 拿到原始数组，再去重新执行并更新 res
+      res = originMethod.apply(this.raw, args)
+    }
+
+    return res
+  }
+})
+
+// 一个标记变量，代表是否进行追踪，默认为 true，即允许追踪
+let shouldTrack = true
+
+;['push', 'pop', 'shift', 'unshift', 'splice'].forEach(method => {
+  const originMethod = Array.prototype[method]
+  arrayInstrumentations[method] = function (...args) {
+    // 禁止追踪
+    shouldTrack = false
+    // 原始方法的默认行为
+    const res = originMethod.apply(this, args)
+    // 允许追踪
+    shouldTrack = true
+
+    return res
+  }
+})
+
 /**
  * 将对象转为响应式对象
  * @param {Object} obj 代理对象
@@ -68,6 +110,10 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
     get(target, prop, receiver) {
       if (prop === 'raw') {
         return target
+      }
+      // 拦截数组的基本方法
+      if (Array.isArray(target) && hasOwn(arrayInstrumentations, prop)) {
+        return Reflect.get(arrayInstrumentations, prop, receiver)
       }
       if (!isReadonly && typeof prop !== 'symbol') {
         // 非只读 且 非symbol类型 才建立响应式联系
@@ -140,7 +186,8 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
 
 // 在 get 拦截器中调用 track 函数追踪变化
 export function track(target, prop) {
-  if (!activeEffect) return
+  // 如果 当前副作用函数不存在 或 禁止追踪时，直接返回
+  if (!activeEffect || !shouldTrack) return
   let depsMap = bucket.get(target)
   if (!depsMap) {
     bucket.set(target, (depsMap = new Map()))
