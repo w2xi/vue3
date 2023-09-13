@@ -68,7 +68,7 @@ const arrayInstrumentations = {}
 ;['includes', 'indexOf', 'lastIndexOf'].forEach(method => {
   const originMethod = Array.prototype[method]
   arrayInstrumentations[method] = function (...args) {
-    // 这里的 this 指向代理对象，现在代理对象中查找
+    // 这里的 this 指向代理对象，先在代理对象中查找
     let res = originMethod.apply(this, args)
 
     if (res === false) {
@@ -89,7 +89,7 @@ let shouldTrack = true
   arrayInstrumentations[method] = function (...args) {
     // 禁止追踪
     shouldTrack = false
-    // 原始方法的默认行为
+    // 原始方法的默认行为 (this 指向代理对象)
     const res = originMethod.apply(this, args)
     // 允许追踪
     shouldTrack = true
@@ -97,6 +97,79 @@ let shouldTrack = true
     return res
   }
 })
+
+// 重写 Set / Map 的方法
+const mutableInstrumentations = {
+  /******** Set ********/
+  add(val) {
+    // 拿到原始对象 (this 指向代理对象)
+    const target = this.raw
+    const hadKey = target.has(val)
+    if (hadKey) {
+      // 值已经存在
+      return target
+    } else {
+      const res = target.add(val)
+      // 手动触发依赖执行，指定操作类型为 ADD
+      trigger(target, val, 'ADD')
+      return res
+    }
+  },
+  /******** Set | Map ********/
+  delete(val) {
+    // 拿到原始对象 (this 指向代理对象)
+    const target = this.raw
+    const hadKey = target.has(val)
+    const res = target.delete(val)
+    if (hadKey) {
+      // key 存在才触发响应
+      // 手动触发依赖执行，指定操作类型为 ADD
+      trigger(target, val, 'ADD')
+    }
+    return res
+  },
+  /******** Map ********/
+  get(key) {
+    // 拿到原始对象
+    const target = this.raw
+    const hadKey = target.has(key)
+    // 收集依赖
+    track(target, key)
+    if (hadKey) {
+      // 如果存在 key，则拿到结果
+      // 但是如果得到的结果 res 仍然是可代理的数据，那么需要使用 reactive 包装后的响应式数据
+      const res = target.get(key)
+      return isObject(res) ? reactive(res) : res
+    }
+  },
+  set(key, val) {
+    const target = this.raw
+    const hadKey = target.has(key)
+    const oldVal = target.get(key)
+    const res = target.set(key, val)
+    if (!hadKey) {
+      // key 不存在，表示新增操作，需要触发 ADD 操作类型 ( ITERATE_KEY )
+      trigger(target, key, 'ADD')
+    } else if (oldVal !== val && oldVal === oldVal && val === val) {
+      // key 存在，且值变了（排除NaN），则是 SET 类型的操作
+      // 触发响应
+      trigger(target, key, 'SET')
+    }
+    return res
+  },
+  forEach(callback, thisArg) {
+    // 如果 val 是对象，则将其转为响应式数据
+    const wrap = val => (isObject(val) ? reactive(val) : val)
+    const target = this.raw
+    // 与 ITERATE_KEY 建立响应式联系
+    // 因为任何 改变对象 size 值的操作 (add / delete) 都需要触发响应
+    track(target, ITERATE_KEY)
+    // 调用原始对象的 forEach
+    target.forEach((value, key) => {
+      callback.call(thisArg, wrap(value), key, this)
+    })
+  }
+}
 
 /**
  * 将对象转为响应式对象
@@ -110,6 +183,19 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
     get(target, prop, receiver) {
       if (prop === 'raw') {
         return target
+      }
+      if (target instanceof Set || target instanceof Map) {
+        // 如果 target 是 Set 或 Map 类型
+        if (prop === 'size') {
+          // 收集依赖 建立 ITERATE_KEY 到副作用函数之间的联系
+          track(target, ITERATE_KEY)
+          // 修正 receiver
+          return Reflect.get(target, prop, target)
+        }
+        if (hasOwn(mutableInstrumentations, prop)) {
+          // 强制绑定 this 指向为 target (解决实际执行方法时 this 指向代理对象的问题)
+          return mutableInstrumentations[prop]
+        }
       }
       // 拦截数组的基本方法
       if (Array.isArray(target) && hasOwn(arrayInstrumentations, prop)) {
@@ -215,8 +301,14 @@ export function trigger(target, prop, type, newVal) {
         effectsToRun.add(effectFn)
       }
     })
-  // 只有操作类型是 `ADD` | `DELETE` 时，才触发与 ITERATE_KEY 相关联的副作用函数重新执行
-  if (type === 'ADD' || type === 'DELETE') {
+  // 只有操作类型是 `ADD` | `DELETE` | `SET` 且目标对象是 Map
+  // 才触发与 ITERATE_KEY 相关联的副作用函数重新执行
+  if (
+    type === 'ADD' ||
+    type === 'DELETE' ||
+    (type === 'SET' &&
+      Object.prototype.toString.call(target) === '[object Map]')
+  ) {
     const iterateEffects = depsMap.get(ITERATE_KEY)
     iterateEffects &&
       iterateEffects.forEach(effectFn => {
