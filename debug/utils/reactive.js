@@ -5,8 +5,8 @@ const ITERATE_KEY = Symbol()
 
 // 当前注册（激活）的副作用函数
 let activeEffect
-// ! 副作用函数栈，activeEffect 指向栈顶，保证 activeEffect 始终指向正确的副作用函数
-// ! 用来解决 effect 嵌套问题
+//! 副作用函数栈，activeEffect 指向栈顶，保证 activeEffect 始终指向正确的副作用函数
+//! 用来解决 effect 嵌套问题
 const effectStack = []
 
 // 用来注册副作用函数
@@ -291,12 +291,12 @@ export function trigger(target, prop, type, newVal) {
   const depsMap = bucket.get(target)
   if (!depsMap) return
   const effects = depsMap.get(prop)
-  // ! 解决无限循环问题
+  //! 解决无限循环问题
   const effectsToRun = new Set()
   effects &&
     effects.forEach(effectFn => {
-      // ! 用来解决 在副作用函数中执行 proxy.count++ 类似问题，即
-      // ! 如果 trigger 触发执行的副作用函数和当前正在执行的副作用函数相同，则不触发执行
+      //! 用来解决 在副作用函数中执行 proxy.count++ 类似问题，即
+      //! 如果 trigger 触发执行的副作用函数和当前正在执行的副作用函数相同，则不触发执行
       if (activeEffect !== effectFn) {
         effectsToRun.add(effectFn)
       }
