@@ -1,4 +1,4 @@
-import { isObject, traverse, hasOwn } from './index.js'
+import { isObject, traverse, hasOwn, isMap, isSet } from './index.js'
 
 const bucket = new WeakMap()
 const ITERATE_KEY = Symbol()
@@ -98,6 +98,33 @@ let shouldTrack = true
   }
 })
 
+function iterationMethod() {
+  const target = this.raw
+  // 获取原始迭代器方法
+  const iterator = target[Symbol.iterator]()
+  const wrap = val => (isObject(val) ? reactive(val) : val)
+  // 建立响应式联系
+  track(target, ITERATE_KEY)
+
+  return {
+    // 自定义迭代器
+    next() {
+      // 调用原始迭代器的 next 方法
+      const { value, done } = iterator.next()
+      return {
+        done,
+        // 包裹
+        value: value ? [wrap(value[0]), wrap(value[1])] : value
+      }
+    },
+    // 实现可迭代协议
+    //! 解决 for (const [key,value] of p.entries()) {/**/} 报错：p.entries is not a function or its return value is not iterable
+    [Symbol.iterator]() {
+      return this
+    }
+  }
+}
+
 // 重写 Set / Map 的方法
 const mutableInstrumentations = {
   /******** Set ********/
@@ -168,7 +195,11 @@ const mutableInstrumentations = {
     target.forEach((value, key) => {
       callback.call(thisArg, wrap(value), key, this)
     })
-  }
+  },
+  // 集合迭代器方法 (Symbol.iterator)
+  [Symbol.iterator]: iterationMethod,
+  // map[Symbol.iterator] === map.entries 二者等价
+  entries: iterationMethod
 }
 
 /**
@@ -184,7 +215,7 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
       if (prop === 'raw') {
         return target
       }
-      if (target instanceof Set || target instanceof Map) {
+      if (isSet(target) || isMap(target)) {
         // 如果 target 是 Set 或 Map 类型
         if (prop === 'size') {
           // 收集依赖 建立 ITERATE_KEY 到副作用函数之间的联系

@@ -21,3 +21,21 @@ export function traverse(obj, seen = new Set()) {
   }
   return obj
 }
+
+export function isSet(val) {
+  return type(val, 'set')
+}
+
+export function isMap(val) {
+  return type(val, 'map')
+}
+
+const toString = Object.prototype.toString
+function type(val, type) {
+  const str = toString.call(val)
+  const matched = str.match(/\[object (\w+)\]/)
+  if (matched) {
+    return matched[1].toLowerCase() === type.toLowerCase()
+  }
+  return false
+}
