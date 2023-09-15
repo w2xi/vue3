@@ -65,6 +65,32 @@ export function shallowReadonly(obj) {
   return createReactive(obj, true, true)
 }
 
+// 非原始值的响应式方案
+export function ref(val) {
+  // let _value = val
+  // const obj = {
+  //   get value() {
+  //     return _value
+  //   },
+  //   set value(newVal) {
+  //     if (_value !== newVal && (_value === _value || newVal === newVal)) { // 排除 NaN
+  //       _value = newVal
+  //     }
+  //   }
+  // }
+
+  const wrapper = {
+    value: val
+  }
+
+  // 在 obj 对象上定义不可枚举属性 __v_isRef 属性
+  Object.defineProperty(wrapper, '__v_isRef', {
+    value: true
+  })
+
+  return reactive(wrapper)
+}
+
 const arrayInstrumentations = {}
 ;['includes', 'indexOf', 'lastIndexOf'].forEach(method => {
   const originMethod = Array.prototype[method]
