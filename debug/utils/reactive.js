@@ -2,6 +2,7 @@ import { isObject, traverse, hasOwn, isMap, isSet } from './index.js'
 
 const bucket = new WeakMap()
 const ITERATE_KEY = Symbol()
+const MAP_KEY_ITERATE_KEY = Symbol()
 
 // 当前注册（激活）的副作用函数
 let activeEffect
@@ -125,6 +126,53 @@ function iterationMethod() {
   }
 }
 
+function valuesIterationMethod() {
+  const target = this.raw
+  const wrap = val => (isObject(val) ? reactive(val) : val)
+  // 建立响应式
+  track(target, ITERATE_KEY)
+  // 拿到原始迭代器
+  const itr = target.values()
+
+  return {
+    // 实现自定义迭代器
+    next() {
+      // 执行原始迭代器的 next 方法
+      const { done, value } = itr.next()
+      return {
+        done,
+        value: wrap(value)
+      }
+    },
+    // 迭代器协议
+    [Symbol.iterator]() {
+      return this
+    }
+  }
+}
+
+function keysIterationMethod() {
+  const target = this.raw
+  const wrap = val => (isObject(val) ? reactive(val) : val)
+  // track(target, ITERATE_KEY
+  // 建立副作用函数 与 MAP_KEY_ITERATE_KEY 之间的响应关联 ( 解决 值更新导致 副作用函数重新执行 )
+  track(target, MAP_KEY_ITERATE_KEY)
+  const itr = target.keys()
+
+  return {
+    next() {
+      const { done, value } = itr.next()
+      return {
+        done,
+        value: wrap(value)
+      }
+    },
+    [Symbol.iterator]() {
+      return this
+    }
+  }
+}
+
 // 重写 Set / Map 的方法
 const mutableInstrumentations = {
   /******** Set ********/
@@ -199,7 +247,9 @@ const mutableInstrumentations = {
   // 集合迭代器方法 (Symbol.iterator)
   [Symbol.iterator]: iterationMethod,
   // map[Symbol.iterator] === map.entries 二者等价
-  entries: iterationMethod
+  entries: iterationMethod,
+  keys: keysIterationMethod,
+  values: valuesIterationMethod
 }
 
 /**
@@ -337,10 +387,20 @@ export function trigger(target, prop, type, newVal) {
   if (
     type === 'ADD' ||
     type === 'DELETE' ||
-    (type === 'SET' &&
-      Object.prototype.toString.call(target) === '[object Map]')
+    (type === 'SET' && isMap(target))
   ) {
     const iterateEffects = depsMap.get(ITERATE_KEY)
+    iterateEffects &&
+      iterateEffects.forEach(effectFn => {
+        if (activeEffect !== effectFn) {
+          effectsToRun.add(effectFn)
+        }
+      })
+  }
+  // 如果 操作类型为 `ADD` | 'DELETE' 且 目标对象是 Map 类型，触发 MAP_KEY_ITERATE_KEY 相关联的副作用函数
+  // 处理 for (const key of map.keys()) {/*...*/}
+  if ((type === 'ADD' || type === 'DELETE') && isMap(target)) {
+    const iterateEffects = depsMap.get(MAP_KEY_ITERATE_KEY)
     iterateEffects &&
       iterateEffects.forEach(effectFn => {
         if (activeEffect !== effectFn) {
