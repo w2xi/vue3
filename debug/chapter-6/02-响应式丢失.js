@@ -1,5 +1,5 @@
 import { effect, reactive } from '../utils/reactive.js'
-import { ref } from '../utils/ref.js'
+import { ref, toRefs } from '../utils/ref.js'
 
 //? 1. 如何区分 refVal1 和 refVal2 ?
 // 在 ref 方法内部给 包裹对象新增 __v_isRef 属性，后面自动脱 ref 会用到
@@ -27,26 +27,6 @@ const newObj2 = {
   // foo: toRef(obj, 'foo'),
   // bar: toRef(obj, 'bar'),
   ...toRefs(obj)
-}
-
-// 抽离重复结构 封装成 toRef 函数
-function toRef(obj, prop) {
-  return {
-    get value() {
-      return obj[prop]
-    },
-    set value(newVal) {
-      obj[prop] = newVal
-    }
-  }
-}
-// 如果响应式数据键非常多，直接调用 toRefs 一次性转换
-function toRefs(obj) {
-  const ret = {}
-  for (const key in obj) {
-    ret[key] = toRef(obj, key)
-  }
-  return ret
 }
 
 effect(() => {

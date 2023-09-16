@@ -27,6 +27,8 @@ export function toRef(obj, prop) {
   Object.defineProperty(wrapper, '__v_isRef', {
     value: true
   })
+
+  return wrapper
 }
 // 如果响应式数据键非常多，直接调用 toRefs 一次性转换
 export function toRefs(obj) {
