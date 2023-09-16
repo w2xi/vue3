@@ -65,39 +65,12 @@ export function shallowReadonly(obj) {
   return createReactive(obj, true, true)
 }
 
-// 非原始值的响应式方案
-export function ref(val) {
-  // let _value = val
-  // const obj = {
-  //   get value() {
-  //     return _value
-  //   },
-  //   set value(newVal) {
-  //     if (_value !== newVal && (_value === _value || newVal === newVal)) { // 排除 NaN
-  //       _value = newVal
-  //     }
-  //   }
-  // }
-
-  const wrapper = {
-    value: val
-  }
-
-  // 在 obj 对象上定义不可枚举属性 __v_isRef 属性
-  Object.defineProperty(wrapper, '__v_isRef', {
-    value: true
-  })
-
-  return reactive(wrapper)
-}
-
 const arrayInstrumentations = {}
 ;['includes', 'indexOf', 'lastIndexOf'].forEach(method => {
   const originMethod = Array.prototype[method]
   arrayInstrumentations[method] = function (...args) {
     // 这里的 this 指向代理对象，先在代理对象中查找
     let res = originMethod.apply(this, args)
-
     if (res === false) {
       // res 为 false 说明没找到
       // 通过 this.raw 拿到原始数组，再去重新执行并更新 res
@@ -352,9 +325,8 @@ function createReactive(obj, isShallow = false, isReadonly = false) {
       return Reflect.has(target, prop)
     },
     // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/ownKeys
-    // 拦截 for ... in | Object.keys | Reflect.ownKeys | ...
+    // 拦截 for ... in | Object.keys | Reflect.ownKeys | ... 扩展符
     ownKeys(target) {
-      console.log('xxxx')
       // 如果目标对象 target 是数组，则使用 length 属性建立响应联系
       track(target, Array.isArray(target) ? 'length' : ITERATE_KEY)
       return Reflect.ownKeys(target)

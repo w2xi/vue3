@@ -1,6 +1,15 @@
-import { effect, ref } from '../utils/reactive.js'
+import { effect } from '../utils/reactive.js'
+import { ref } from '../utils/ref.js'
 
-// 实现 ref 方法
+// 原始值的响应式方案 ref
+// 顾名思义，原始值，即 string number boolean null undefined symbol bigint
+// 但是 JS 底层并没有提供对原始值的代理能力
+// 例如：let foo = 'bar';
+// 显然 JS 无法代理变量 foo 的读取和设置
+// 但是如果我们把原始值包装为一个对象，例如:
+// const wrapper = { value: '原始值' }
+// 访问 wrapper.value 就是读取`原始值` 从而利用之前实现的 reactive
+// 从而实现原始值的代理方案
 
 console.log('****** 原始值 ******')
 
