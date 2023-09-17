@@ -38,3 +38,28 @@ export function toRefs(obj) {
   }
   return ret
 }
+
+/**
+ * 使用该函数对 toRefs 函数返回的结果进行代理 实现自动脱 ref
+ * 在实际的 Vue.js 开发中，组件中的 setup 函数的返回结果会传递给 proxyRefs 进行处理
+ * 源码：packages/runtime-core/src/component.ts 795 行
+ * @param {Object} obj
+ * @returns Proxy
+ */
+export function proxyRefs(obj) {
+  return new Proxy(obj, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver)
+      // 自动脱 ref
+      return value.__v_isRef ? value.value : value
+    },
+    set(target, prop, newVal, receiver) {
+      const value = target[prop]
+      if (value.__v_isRef) {
+        value.value = newVal
+        return true
+      }
+      return Reflect.set(target, prop, newVal, receiver)
+    }
+  })
+}
