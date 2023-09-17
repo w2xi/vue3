@@ -1,9 +1,5 @@
-import {
-  reactive,
-  effect,
-  readonly,
-  shallowReadonly
-} from '../utils/reactive.js'
+import { reactive, readonly, shallowReadonly } from '../utils/reactive.js'
+import { effect } from '../utils/effect.js'
 
 // 只读 & 浅只读
 // 应用：比如，组件接收的 props 是只读的

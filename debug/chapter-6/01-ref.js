@@ -1,4 +1,4 @@
-import { effect } from '../utils/reactive.js'
+import { effect } from '../utils/effect.js'
 import { ref } from '../utils/ref.js'
 
 // 原始值的响应式方案 ref

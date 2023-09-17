@@ -1,4 +1,5 @@
-import { reactive, effect } from '../../utils/reactive.js'
+import { reactive } from '../../utils/reactive.js'
+import { effect } from '../../utils/effect.js'
 
 //* 遍历数组 for ... in
 

@@ -1,4 +1,5 @@
-import { effect, reactive } from '../utils/reactive.js'
+import { reactive } from '../utils/reactive.js'
+import { effect } from '../utils/effect.js'
 import { ref, toRefs } from '../utils/ref.js'
 
 //? 1. 如何区分 refVal1 和 refVal2 ?

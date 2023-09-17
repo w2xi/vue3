@@ -1,4 +1,5 @@
-import { reactive, watch } from '../utils/reactive.js'
+import { reactive } from '../utils/reactive.js'
+import watch from '../utils/watch.js'
 
 const data = {
   foo: 1

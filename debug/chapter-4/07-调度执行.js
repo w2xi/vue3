@@ -1,7 +1,8 @@
 // 调度执行
 // * 需求：trigger 触发副作用函数执行时，改变副作用函数的执行时机
 
-import { reactive, effect } from '../utils/reactive.js'
+import { reactive } from '../utils/reactive.js'
+import { effect } from '../utils/effect.js'
 
 const data = { count: 0 }
 const proxy = reactive(data)

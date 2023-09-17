@@ -1,7 +1,8 @@
+import { reactive } from '../utils/reactive.js'
+import watch from '../utils/watch.js'
+
 // watch
 // 观测响应式数据的变化，然后执行相应的回调函数
-
-import { reactive, watch } from '../utils/reactive.js'
 
 const data = {
   foo: 1

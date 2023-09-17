@@ -1,4 +1,5 @@
-import { reactive, effect } from '../../utils/reactive.js'
+import { reactive } from '../../utils/reactive.js'
+import { effect } from '../../utils/effect.js'
 
 //* 隐式修改数组长度
 

@@ -1,4 +1,5 @@
-import { reactive, effect } from '../../utils/reactive.js'
+import { reactive } from '../../utils/reactive.js'
+import { effect } from '../../utils/effect.js'
 
 // Map 的响应式
 // map.get 建立响应式联系

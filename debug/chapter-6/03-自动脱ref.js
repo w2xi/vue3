@@ -1,4 +1,5 @@
-import { effect, reactive } from '../utils/reactive.js'
+import { reactive } from '../utils/reactive.js'
+import { effect } from '../utils/effect.js'
 import { toRefs, proxyRefs } from '../utils/ref.js'
 
 // 自动脱 ref

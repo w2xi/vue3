@@ -1,4 +1,5 @@
-import { reactive, effect, watch } from '../../utils/reactive.js'
+import { reactive } from '../../utils/reactive.js'
+import { effect } from '../../utils/effect.js'
 
 // 代理数组
 // 分析：

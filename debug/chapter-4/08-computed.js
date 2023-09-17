@@ -1,6 +1,8 @@
-// 计算属性 computed & 懒执行(lazy)的 computed
+import { reactive } from '../utils/reactive.js'
+import { effect } from '../utils/effect.js'
+import computed from '../utils/computed.js'
 
-import { reactive, effect, computed } from '../utils/reactive.js'
+// 计算属性 computed & 懒执行(lazy)的 computed
 
 const data = {
   foo: 1

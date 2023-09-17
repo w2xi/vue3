@@ -1,4 +1,5 @@
-import { reactive, effect, shallowReactive } from '../utils/reactive.js'
+import { reactive, shallowReactive } from '../utils/reactive.js'
+import { effect } from '../utils/effect.js'
 
 const data = {
   foo: {
