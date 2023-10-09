@@ -22,9 +22,16 @@ const State = {
 function tokenize(str) {
   let currentState = State.initial
   let chars = ''
+  const tokens = []
+
   while (str) {
     const c = str[0]
     if (c === '<') {
+      if (currentState === State.text) {
+        // 如果之前是 文本状态
+        tokens.push({ tag: 'text', content: chars })
+      }
+      // 进入 标签开始状态
       currentState = State.tagOpen
       str = str.slice(1)
     } else if (isAlpha(c)) {
@@ -32,6 +39,15 @@ function tokenize(str) {
       chars += c
       str = str.slice(1)
     } else if (c === '>') {
+      /***** 结束标签 ****/
+      if (currentState === State.tagName) {
+        // 如果之前是 标签名状态
+        tokens.push({ type: 'tag', name: chars })
+      }
+      // 迁移到初始状态
+      currentState = State.initial
+      // 重置
+      chars = ''
     } else if (c === '/') {
       currentState = State.tagEnd
     }
