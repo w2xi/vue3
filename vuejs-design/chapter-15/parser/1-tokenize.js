@@ -1,3 +1,4 @@
+// 定义状态机的状态
 const State = {
   initial: 1, // 初始化状态
   tagOpen: 2, // 标签开始状态
@@ -12,7 +13,9 @@ function isAlpha(char) {
   return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z')
 }
 
+// 接收模板字符串作为参数，并将模板切割为 Token 返回
 function tokenize(str) {
+  // 初始状态
   let currentState = State.initial
   let chars = ''
   const tokens = []
@@ -79,6 +82,7 @@ function tokenize(str) {
         }
         break
     }
+    // 每次消费一个字符
     str = str.slice(1)
   }
 
