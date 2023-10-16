@@ -1,3 +1,5 @@
+import { dump } from '../utils/index.js'
+
 // 定义状态机的状态
 const State = {
   initial: 1, // 初始化状态
@@ -149,3 +151,28 @@ const ast = parse('<div><p>Vue</p><p>React</p></div>')
 
 console.log('[ast]')
 console.dir(ast, { depth: null })
+
+// output:
+// {
+//   type: 'Root',
+//   children: [
+//     {
+//       type: 'Element',
+//       tag: 'div',
+//       children: [
+//         {
+//           type: 'Element',
+//           tag: 'p',
+//           children: [ { type: 'Text', content: 'Vue' } ]
+//         },
+//         {
+//           type: 'Element',
+//           tag: 'p',
+//           children: [ { type: 'Text', content: 'React' } ]
+//         }
+//       ]
+//     }
+//   ]
+// }
+
+dump(ast)
