@@ -92,7 +92,7 @@ function tokenize(str) {
 const template = '<p>Vue</p>'
 const tokens = tokenize(template)
 
-console.log(tokens)
+// console.log('[tokens]', tokens)
 
 // output:
 
@@ -101,3 +101,51 @@ console.log(tokens)
 //   { type: 'text', content: 'Vue' },
 //   { type: 'tagEnd', name: 'p' },
 // ]
+
+function parse(str) {
+  // 对模板标记化
+  const tokens = tokenize(str)
+  // 根节点
+  const root = {
+    type: 'Root',
+    children: []
+  }
+  // 维持一个元素栈，栈顶节点就是当前遍历节点的父节点
+  // (遇到开始表标签，入栈；遇到结束标签，出栈)
+  const elementStack = [root]
+
+  for (let i = 0; i < tokens.length; i++) {
+    // 父元素节点
+    const parent = elementStack[elementStack.length - 1]
+    const token = tokens[i]
+    if (token.type === 'tag') {
+      // 开始标签
+      const elementNode = {
+        type: 'Element',
+        tag: token.name, // 标签名称
+        children: []
+      }
+      parent.children.push(elementNode)
+      // 入栈
+      elementStack.push(elementNode)
+    } else if (token.type === 'text') {
+      // 文本节点
+      const textNode = {
+        type: 'Text',
+        content: token.content
+      }
+      parent.children.push(textNode)
+    } else if (token.type === 'tagEnd') {
+      // 结束标签
+      // 出栈
+      elementStack.pop()
+    }
+  }
+
+  return root
+}
+
+const ast = parse('<div><p>Vue</p><p>React</p></div>')
+
+console.log('[ast]')
+console.dir(ast, { depth: null })
