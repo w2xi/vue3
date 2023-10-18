@@ -94,7 +94,7 @@ function tokenize(str) {
 const template = '<p>Vue</p>'
 const tokens = tokenize(template)
 
-// console.log('[tokens]', tokens)
+console.log('[tokens]', tokens)
 
 // output:
 
@@ -149,7 +149,7 @@ function parse(str) {
 
 const ast = parse('<div><p>Vue</p><p>React</p></div>')
 
-console.log('[ast]')
+console.log('[ast]:')
 console.dir(ast, { depth: null })
 
 // output:
@@ -175,4 +175,92 @@ console.dir(ast, { depth: null })
 //   ]
 // }
 
+console.log('[dump]:')
 dump(ast)
+
+/**
+ * AST 转换
+ * @param {Object} ast
+ */
+function transform(ast) {
+  const context = {
+    // 当前转换的节点
+    currentNode: null,
+    // 当前节点在父节点的 children 中的位置索引
+    childIndex: 0,
+    // 当前转换节点的父节点
+    parent: null,
+    // 用于替换节点的函数，接收新节点作为参数
+    replaceNode(node) {
+      // 替换节点
+      context.parent.children[context.childIndex] = node
+      // 更新当前节点
+      context.currentNode = node
+    },
+    // 移除当前节点
+    removeNode() {
+      if (context.parent) {
+        context.parent.children.splice(context.childIndex, 1)
+        // 置空当前节点
+        context.currentNode = null
+      }
+    },
+    // 注册 nodeTransforms 数组 (解耦)
+    nodeTransforms: [transformElement, transformText]
+  }
+  traverseNode(ast, context)
+  console.log('[transform dump]:')
+  dump(ast)
+}
+
+/**
+ * 深度优先遍历 AST 节点
+ * @param {Object} ast
+ */
+function traverseNode(ast, context) {
+  context.currentNode = ast
+  // 函数数组类型
+  const transforms = context.nodeTransforms
+  for (let i = 0; i < transforms.length; i++) {
+    // 执行转换操作
+    transforms[i](context.currentNode, context)
+    // 由于转换函数可能移除当前节点，因此需要在转换函数执行之后检查当前节点是否存在，如果不存在，则直接返回
+    if (!context.currentNode) return
+  }
+  const children = context.currentNode.children
+  if (children) {
+    children.forEach((child, index) => {
+      context.parent = context.currentNode
+      context.childIndex = index
+      traverseNode(child, context)
+    })
+  }
+}
+
+function transformElement(node) {
+  if (node.type === 'Element' && node.tag === 'p') {
+    // 如果是元素类型且是 p 标签
+    node.tag = 'h1'
+  }
+}
+
+function transformText(node, context) {
+  if (node.type === 'Text') {
+    // 如果是文本节点，则替换为元素节点
+    // context.replaceNode({
+    //   type: 'Element',
+    //   tag: 'span',
+    //   children: [
+    //     // 这样会爆栈...
+    //     // {
+    //     //   type: 'Text',
+    //     //   content: '1'
+    //     // }
+    //   ]
+    // })
+    // 如果是文本节点，移除
+    context.removeNode()
+  }
+}
+
+transform(ast)
