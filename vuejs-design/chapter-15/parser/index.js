@@ -219,14 +219,21 @@ function transform(ast) {
  */
 function traverseNode(ast, context) {
   context.currentNode = ast
-  // 函数数组类型
+  // 先序遍历
+
+  const exitFns = []
   const transforms = context.nodeTransforms
   for (let i = 0; i < transforms.length; i++) {
     // 执行转换操作
-    transforms[i](context.currentNode, context)
+    // 返回待执行的一个回调函数
+    const onExit = transforms[i](context.currentNode, context)
+    if (onExit) {
+      exitFns.push(onExit)
+    }
     // 由于转换函数可能移除当前节点，因此需要在转换函数执行之后检查当前节点是否存在，如果不存在，则直接返回
     if (!context.currentNode) return
   }
+
   const children = context.currentNode.children
   if (children) {
     children.forEach((child, index) => {
@@ -235,31 +242,54 @@ function traverseNode(ast, context) {
       traverseNode(child, context)
     })
   }
+
+  let size = exitFns.length
+  // 回调函数反序执行，其本质和后续遍历没啥区别
+  // 保证了 先处理子节点 再处理父节点
+  while (size--) {
+    exitFns[size]()
+  }
+
+  // 后序遍历
+  // const transforms = context.nodeTransforms
+  // for (let i = 0; i < transforms.length; i++) {
+  //   // console.log(ast.tag || ast.content || ast.type)
+  //   // 执行转换操作
+  //   transforms[i](context.currentNode, context)
+  //   // 由于转换函数可能移除当前节点，因此需要在转换函数执行之后检查当前节点是否存在，如果不存在，则直接返回
+  //   if (!context.currentNode) return
+  // }
 }
 
 function transformElement(node) {
-  if (node.type === 'Element' && node.tag === 'p') {
-    // 如果是元素类型且是 p 标签
-    node.tag = 'h1'
+  return () => {
+    // console.log(node.tag || node.content || node.type)
+    if (node && node.type === 'Element' && node.tag === 'p') {
+      // 如果是元素类型且是 p 标签
+      node.tag = 'h1'
+    }
   }
 }
 
 function transformText(node, context) {
-  if (node.type === 'Text') {
-    // 如果是文本节点，则替换为元素节点
-    // context.replaceNode({
-    //   type: 'Element',
-    //   tag: 'span',
-    //   children: [
-    //     // 这样会爆栈...
-    //     // {
-    //     //   type: 'Text',
-    //     //   content: '1'
-    //     // }
-    //   ]
-    // })
-    // 如果是文本节点，移除
-    context.removeNode()
+  return () => {
+    if (node && node.type === 'Text') {
+      // 如果是文本节点，则替换为元素节点
+      context.replaceNode({
+        type: 'Element',
+        tag: 'span',
+        children: [
+          // 这样会爆栈... 估计和转换执行顺序有关，目前是顺序(前序)执行
+          // 改为后序执行后就没这问题了
+          {
+            type: 'Text',
+            content: '1'
+          }
+        ]
+      })
+      // 如果是文本节点，移除
+      // context.removeNode()
+    }
   }
 }
 
