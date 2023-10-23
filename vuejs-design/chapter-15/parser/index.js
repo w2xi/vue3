@@ -1,4 +1,9 @@
-import { dump } from '../utils/index.js'
+import {
+  dump,
+  transformElement,
+  transformText,
+  transformRoot
+} from '../utils/index.js'
 
 // 定义状态机的状态
 const State = {
@@ -206,10 +211,10 @@ function transform(ast) {
       }
     },
     // 注册 nodeTransforms 数组 (解耦)
-    nodeTransforms: [transformElement, transformText]
+    nodeTransforms: [transformRoot, transformElement, transformText]
   }
   traverseNode(ast, context)
-  console.log('[transform dump]:')
+  console.log('[dump transform]:')
   dump(ast)
 }
 
@@ -261,36 +266,6 @@ function traverseNode(ast, context) {
   // }
 }
 
-function transformElement(node) {
-  return () => {
-    // console.log(node.tag || node.content || node.type)
-    if (node && node.type === 'Element' && node.tag === 'p') {
-      // 如果是元素类型且是 p 标签
-      node.tag = 'h1'
-    }
-  }
-}
-
-function transformText(node, context) {
-  return () => {
-    if (node && node.type === 'Text') {
-      // 如果是文本节点，则替换为元素节点
-      context.replaceNode({
-        type: 'Element',
-        tag: 'span',
-        children: [
-          // 这样会爆栈... 估计和转换执行顺序有关，目前是顺序(前序)执行
-          // 改为后序执行后就没这问题了
-          {
-            type: 'Text',
-            content: '1'
-          }
-        ]
-      })
-      // 如果是文本节点，移除
-      // context.removeNode()
-    }
-  }
-}
-
 transform(ast)
+console.log('[JS AST]:')
+console.dir(ast.jsNode, { depth: null })
