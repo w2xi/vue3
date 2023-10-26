@@ -269,3 +269,35 @@ function traverseNode(ast, context) {
 transform(ast)
 console.log('[JS AST]:')
 console.dir(ast.jsNode, { depth: null })
+
+/**
+ * 编译
+ * @param {String} template 模板
+ * @returns {String} 渲染函数字符串代码
+ */
+function compile(template) {
+  // 模板 AST
+  const ast = parse(template)
+  // 将模板 AST 转换为 JS AST
+  transform(ast)
+  // 代码生成
+  const code = generate(ast.jsNode)
+
+  return code
+}
+
+/**
+ * 代码生成
+ * @param {Object} ast JS AST
+ * @returns {String}
+ */
+function generate(node) {
+  // 上下文
+  const context = {
+    // 存储最终生成的渲染函数代码
+    code: '',
+    push(code) {
+      context.code += code
+    }
+  }
+}
