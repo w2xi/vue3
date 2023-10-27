@@ -154,31 +154,8 @@ function parse(str) {
 
 const ast = parse('<div><p>Vue</p><p>React</p></div>')
 
-console.log('[ast]:')
+console.log('[模板AST]:')
 console.dir(ast, { depth: null })
-
-// output:
-// {
-//   type: 'Root',
-//   children: [
-//     {
-//       type: 'Element',
-//       tag: 'div',
-//       children: [
-//         {
-//           type: 'Element',
-//           tag: 'p',
-//           children: [ { type: 'Text', content: 'Vue' } ]
-//         },
-//         {
-//           type: 'Element',
-//           tag: 'p',
-//           children: [ { type: 'Text', content: 'React' } ]
-//         }
-//       ]
-//     }
-//   ]
-// }
 
 console.log('[dump]:')
 dump(ast)
@@ -286,6 +263,8 @@ function compile(template) {
   return code
 }
 
+/************** 代码生成 code generate **************/
+
 /**
  * 代码生成
  * @param {Object} ast JS AST
@@ -296,8 +275,77 @@ function generate(node) {
   const context = {
     // 存储最终生成的渲染函数代码
     code: '',
+    // 在生成代码时，通过调用 push 函数完成代码的拼接
     push(code) {
       context.code += code
+    },
+    /********** 一下属性和方法用于提高生成的代码字符串的可读性 **********/
+    // 当前缩进级别，初始值为0，即没有缩进
+    currentIndent: 0,
+    // 换行，即在代码字符串后面追加 \n 字符，且换行时应该保留缩进，追加 currentIndent * 2 个字符
+    newLine() {
+      context.code += '\n' + '  '.repeat(context.currentIndent * 2)
+    },
+    // 用来缩进，即让 currentIndent 自增后，调用 newLine 函数
+    indent() {
+      context.currentIndent++
+      context.newLine()
+    },
+    // 取消缩进，即让 currentIndent 自减后，调用 newLine 函数
+    deIndent() {
+      context.currentIndent--
+      context.newLine()
     }
+  }
+  // 执行 genNode 完成代码生成的工作
+  genNode(node, context)
+  // 返回渲染函数代码
+  return context.code
+}
+
+function genNode(node, context) {
+  switch (node.type) {
+    case 'FuntionDecl':
+      genFunctiionDecl(node, context)
+      break
+    case 'ReturnStatement':
+      genReturnStatement(node, context)
+      break
+    case 'CallExpression':
+      genCallExpression(node, context)
+      break
+    case 'StringLiteral':
+      genStringLiteral(node, context)
+      break
+    case 'ArrayExpression':
+      genArrayExpression(node, context)
+      break
+  }
+}
+
+function genFunctionDecl(node, context) {
+  // 工具函数
+  const { push, indent, deIndent } = context
+  // node.id.name 表示函数名称
+  push(`function ${node.id.name}`)
+  push(`(`)
+  // 生成函数参数代码字符串
+  genNodeList(node.params, context)
+  push(`) `)
+  push(`{`)
+  // 缩进
+  indent()
+  // 为函数体生成代码，这里递归地调用 genNode 函数
+  node.body.forEach(n => genNode(n, context))
+  // 取消缩进
+  deIndent()
+  push(`}`)
+}
+
+function genNodeList(nodes, context) {
+  const { push } = context
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]
   }
 }

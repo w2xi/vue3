@@ -35,15 +35,18 @@ console.log(tokens)
 // ]
 ```
 
-### 构造 AST 
+### 构造 AST
 
-对 <code>Token</code> 进行解析、构造得到模板 <code>ast</code>
+对 <code>Token</code> 进行解析、构造得到模板 <code>AST</code>
 
 ```js
+// 模板 AST
 const ast = parse(`<div><p>Vue</p><p>React</p></div>`)
-console.log(ast)
+console.log('[模板AST]:')
+console.dir(ast, { depth: null })
 
 // output:
+// [模板AST]:
 // {
 //   type: 'Root',
 //   children: [
@@ -67,6 +70,54 @@ console.log(ast)
 // }
 ```
 
-### AST 转换
+### AST 转换 ( 模板 AST -> JS AST )
 
-### 模板 AST => JS AST
+```js
+// 转换后得到 JavaScript AST
+transform(ast)
+console.log('[JS AST]:')
+console.dir(ast.jsNode, { depth: null })
+
+// output:
+// [JS AST]:
+// {
+//   type: 'FunctionDecl',
+//   id: { type: 'Identifier', name: 'render' },
+//   params: [],
+//   body: [
+//     {
+//       type: 'ReturnStatement',
+//       return: {
+//         type: 'CallExpression',
+//         callee: { type: 'Identifier', name: 'h' },
+//         arguments: [
+//           { type: 'StringLiteral', value: 'div' },
+//           {
+//             type: 'ArrayExpression',
+//             elements: [
+//               {
+//                 type: 'CallExpression',
+//                 callee: { type: 'Identifier', name: 'h' },
+//                 arguments: [
+//                   { type: 'StringLiteral', value: 'p' },
+//                   { type: 'StringLiteral', value: 'Vue' }
+//                 ]
+//               },
+//               {
+//                 type: 'CallExpression',
+//                 callee: { type: 'Identifier', name: 'h' },
+//                 arguments: [
+//                   { type: 'StringLiteral', value: 'p' },
+//                   { type: 'StringLiteral', value: 'React' }
+//                 ]
+//               }
+//             ]
+//           }
+//         ]
+//       }
+//     }
+//   ]
+// }
+```
+
+### 代码生成
