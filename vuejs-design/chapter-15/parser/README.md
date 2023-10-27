@@ -72,6 +72,8 @@ console.dir(ast, { depth: null })
 
 ### AST 转换 ( 模板 AST -> JS AST )
 
+前面我们得到了模板AST，在进行代码生成之前，还需要将模板AST转换为JS AST, 以便于后面的代码生成工作
+
 ```js
 // 转换后得到 JavaScript AST
 transform(ast)
@@ -120,4 +122,15 @@ console.dir(ast.jsNode, { depth: null })
 // }
 ```
 
-### 代码生成
+## 代码生成
+
+```js
+// 将 JS AST 当作参数传入
+const code = generate(ast.jsNode)
+console.log(code)
+
+// output:
+// function render() {
+//     return h('div', [h('p', 'Vue'), h('p', 'React')])
+// }
+```

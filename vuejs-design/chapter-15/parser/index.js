@@ -247,21 +247,15 @@ transform(ast)
 console.log('[JS AST]:')
 console.dir(ast.jsNode, { depth: null })
 
-/**
- * 编译
- * @param {String} template 模板
- * @returns {String} 渲染函数字符串代码
- */
-function compile(template) {
-  // 模板 AST
-  const ast = parse(template)
-  // 将模板 AST 转换为 JS AST
-  transform(ast)
-  // 代码生成
-  const code = generate(ast.jsNode)
+const code = generate(ast.jsNode)
+console.log('[render function]:')
+console.log(code)
 
-  return code
-}
+// output:
+// [render function]:
+// function render() {
+//     return h('div', [h('p', 'Vue'), h('p', 'React')])
+// }
 
 /************** 代码生成 code generate **************/
 
@@ -303,10 +297,15 @@ function generate(node) {
   return context.code
 }
 
+/**
+ * 根据节点类型生成对应代码
+ * @param {*} node
+ * @param {*} context
+ */
 function genNode(node, context) {
   switch (node.type) {
-    case 'FuntionDecl':
-      genFunctiionDecl(node, context)
+    case 'FunctionDecl':
+      genFunctionDecl(node, context)
       break
     case 'ReturnStatement':
       genReturnStatement(node, context)
@@ -323,6 +322,11 @@ function genNode(node, context) {
   }
 }
 
+/**
+ * 以渲染函数为例，生成类似 `function render(...)  { return ... }` 代码字符串
+ * @param {Object} node JS AST
+ * @param {Object} context
+ */
 function genFunctionDecl(node, context) {
   // 工具函数
   const { push, indent, deIndent } = context
@@ -342,10 +346,82 @@ function genFunctionDecl(node, context) {
   push(`}`)
 }
 
+/**
+ * 生成数组表达式
+ * @param {Object} node
+ * @param {Object} context
+ */
+function genArrayExpression(node, context) {
+  const { push } = context
+  // 追加方括号
+  push('[')
+  // 为数组元素生成代码
+  genNodeList(node.elements, context)
+  push(']')
+}
+
+/**
+ * 生成字符串字面量
+ * @param {*} node
+ * @param {*} context
+ */
+function genStringLiteral(node, context) {
+  const { push } = context
+  push(`'${node.value}'`)
+}
+
+/**
+ * 生成 return 返回值
+ * @param {*} node
+ * @param {*} context
+ */
+function genReturnStatement(node, context) {
+  const { push } = context
+  // 追加 return 关键字和空格
+  push(`return `)
+  // 递归地生成返回值代码
+  genNode(node.return, context)
+}
+
+/**
+ * 生成调用表达式代码
+ * @param {*} node
+ * @param {*} context
+ * @example
+ *
+ * h('p', 'Vue')
+ */
+function genCallExpression(node, context) {
+  const { push } = context
+  // 获取调用函数名称和参数列表
+  const { callee, arguments: args } = node
+  // 生成函数调用名称
+  push(`${callee.name}(`)
+  // 生成参数代码
+  genNodeList(args, context)
+  // 补全括号
+  push(`)`)
+}
+
+/**
+ * @param {Array} nodes
+ * @param {Object} context
+ * @example
+ *
+ * const nodes = ['节点1', '节点2', '节点3']
+ * => 生成的字符串为
+ * '节点1, 节点2, 节点3'
+ * 如果在这段代码前后添加圆括号，那么就可以用于函数的参数声明: ('节点1, 节点2, 节点3')
+ * 如果在这段代码前后添加方括号，那么它就是一个数组: ['节点1, 节点2, 节点3']
+ */
 function genNodeList(nodes, context) {
   const { push } = context
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
+    genNode(node, context)
+    if (i < nodes.length - 1) {
+      push(', ')
+    }
   }
 }
