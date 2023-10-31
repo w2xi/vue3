@@ -3,7 +3,7 @@
  * @param {String} str 模板字符串
  * @returns {Object}
  */
-function parse(str) {
+export function parse(str) {
   const context = {
     // 存储模板字符串
     source: str,
@@ -40,7 +40,7 @@ function parseChildren(context, ancestors = []) {
       if (s[1] === '/') {
         // 结束标签
       } else if (/[a-z]/i.test(s[1])) {
-        // 解析标签
+        // 解析开始标签
         node = parseElement(context, ancestors)
       }
     }
@@ -53,6 +53,11 @@ function parseChildren(context, ancestors = []) {
   return nodes
 }
 
+/**
+ * 解析插值表达式
+ * @param {*} context 上下文
+ * @returns
+ */
 function parseInterpolation(context) {
   const { advanceBy } = context
   // 移除 {{
@@ -138,6 +143,7 @@ function parseText(context) {
   }
 }
 
+// 是否解析结束
 function isEnd(context, ancestors) {
   if (!context.source) return true
   // 与节点栈内全部的节点比较

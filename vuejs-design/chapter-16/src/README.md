@@ -28,11 +28,11 @@ const tokens = tokenize(template)
 console.log(tokens)
 
 // output:
-// [
-//   { type: 'tag', name: 'p' },
-//   { type: 'text', content: 'Vue' },
-//   { type: 'tagEnd', name: 'p' },
-// ]
+[
+  { type: 'tag', name: 'p' },
+  { type: 'text', content: 'Vue' },
+  { type: 'tagEnd', name: 'p' },
+]
 ```
 
 ### 构造 AST
@@ -41,33 +41,38 @@ console.log(tokens)
 
 ```js
 // 模板 AST
-const ast = parse(`<div><p>Vue</p><p>React</p></div>`)
+const ast = parse(`<div><p>{{ msg }}</p><p>React</p></div>`)
 console.log('[模板AST]:')
 console.dir(ast, { depth: null })
 
 // output:
 // [模板AST]:
-// {
-//   type: 'Root',
-//   children: [
-//     {
-//       type: 'Element',
-//       tag: 'div',
-//       children: [
-//         {
-//           type: 'Element',
-//           tag: 'p',
-//           children: [ { type: 'Text', content: 'Vue' } ]
-//         },
-//         {
-//           type: 'Element',
-//           tag: 'p',
-//           children: [ { type: 'Text', content: 'React' } ]
-//         }
-//       ]
-//     }
-//   ]
-// }
+{
+  type: 'Root',
+  children: [
+    {
+      type: 'Element',
+      tag: 'div',
+      children: [
+        {
+          type: 'Element',
+          tag: 'p',
+          children: [
+            {
+              type: 'Interpolation',
+              content: { type: 'Expression', content: 'msg' }
+            }
+          ]
+        },
+        {
+          type: 'Element',
+          tag: 'p',
+          children: [ { type: 'Text', content: 'Template' } ]
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ### AST 转换 ( 模板 AST -> JS AST )
@@ -82,44 +87,44 @@ console.dir(ast.jsNode, { depth: null })
 
 // output:
 // [JS AST]:
-// {
-//   type: 'FunctionDecl',
-//   id: { type: 'Identifier', name: 'render' },
-//   params: [],
-//   body: [
-//     {
-//       type: 'ReturnStatement',
-//       return: {
-//         type: 'CallExpression',
-//         callee: { type: 'Identifier', name: 'h' },
-//         arguments: [
-//           { type: 'StringLiteral', value: 'div' },
-//           {
-//             type: 'ArrayExpression',
-//             elements: [
-//               {
-//                 type: 'CallExpression',
-//                 callee: { type: 'Identifier', name: 'h' },
-//                 arguments: [
-//                   { type: 'StringLiteral', value: 'p' },
-//                   { type: 'StringLiteral', value: 'Vue' }
-//                 ]
-//               },
-//               {
-//                 type: 'CallExpression',
-//                 callee: { type: 'Identifier', name: 'h' },
-//                 arguments: [
-//                   { type: 'StringLiteral', value: 'p' },
-//                   { type: 'StringLiteral', value: 'React' }
-//                 ]
-//               }
-//             ]
-//           }
-//         ]
-//       }
-//     }
-//   ]
-// }
+{
+  type: 'FunctionDecl',
+  id: { type: 'Identifier', name: 'render' },
+  params: [],
+  body: [
+    {
+      type: 'ReturnStatement',
+      return: {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'h' },
+        arguments: [
+          { type: 'StringLiteral', value: 'div' },
+          {
+            type: 'ArrayExpression',
+            elements: [
+              {
+                type: 'CallExpression',
+                callee: { type: 'Identifier', name: 'h' },
+                arguments: [
+                  { type: 'StringLiteral', value: 'p' },
+                  { type: 'StringLiteral', value: 'Vue' }
+                ]
+              },
+              {
+                type: 'CallExpression',
+                callee: { type: 'Identifier', name: 'h' },
+                arguments: [
+                  { type: 'StringLiteral', value: 'p' },
+                  { type: 'StringLiteral', value: 'React' }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
 ```
 
 ## 代码生成
@@ -130,7 +135,7 @@ const code = generate(ast.jsNode)
 console.log(code)
 
 // output:
-// function render() {
-//     return h('div', [h('p', 'Vue'), h('p', 'React')])
-// }
+function render() {
+    return h('div', [h('p', 'Vue'), h('p', 'React')])
+}
 ```

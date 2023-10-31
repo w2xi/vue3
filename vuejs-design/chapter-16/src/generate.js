@@ -58,7 +58,33 @@ function genNode(node, context) {
     case 'ArrayExpression':
       genArrayExpression(node, context)
       break
+    case 'Interpolation':
+      genInterpolation(node, context)
+      break
+    case 'Expression':
+      genExpression(node, context)
+      break
   }
+}
+
+/**
+ * @param {*} node
+ * @param {*} context
+ * @example
+ *
+ * { type: 'Interpolation', content: { type: 'Expression', content: '_ctx.msg' } }
+ * =>
+ * _ctx.msg
+ */
+function genInterpolation(node, context) {
+  const { push } = context
+  // push(`(`);
+  genNode(node.content, context)
+  // push(")");
+}
+
+function genExpression(node, context) {
+  context.push(node.content)
 }
 
 /**
@@ -69,11 +95,14 @@ function genNode(node, context) {
 function genFunctionDecl(node, context) {
   // 工具函数
   const { push, indent, deIndent } = context
+  const args = ['_ctx']
+  const signature = args.join(', ')
   // node.id.name 表示函数名称
   push(`function ${node.id.name}`)
   push(`(`)
   // 生成函数参数代码字符串
-  genNodeList(node.params, context)
+  // genNodeList(node.params, context)
+  push(signature)
   push(`) `)
   push(`{`)
   // 缩进

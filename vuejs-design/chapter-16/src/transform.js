@@ -28,7 +28,12 @@ export function transform(ast) {
       }
     },
     // 注册 nodeTransforms 数组 (解耦)
-    nodeTransforms: [transformRoot, transformElement, transformText]
+    nodeTransforms: [
+      transformRoot,
+      transformElement,
+      transformText,
+      transformExpression
+    ]
   }
   traverseNode(ast, context)
   console.log('[dump transform]:')
@@ -74,6 +79,21 @@ function traverseNode(ast, context) {
 }
 
 // =============================== AST 工具函数 ===============================
+
+function transformExpression(node) {
+  if (node.type === 'Interpolation') {
+    node.content = processExpression(node.content)
+    node.jsNode = {
+      type: 'Interpolation',
+      content: node.content
+    }
+  }
+}
+
+function processExpression(node) {
+  node.content = `_ctx.${node.content}`
+  return node
+}
 
 // 转换标签节点
 function transformElement(node) {
