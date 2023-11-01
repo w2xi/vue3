@@ -107,7 +107,10 @@ console.dir(ast.jsNode, { depth: null })
                 callee: { type: 'Identifier', name: 'h' },
                 arguments: [
                   { type: 'StringLiteral', value: 'p' },
-                  { type: 'StringLiteral', value: 'Vue' }
+                  {
+                    type: 'Interpolation',
+                    content: { type: 'Expression', content: '_ctx.msg' }
+                  }
                 ]
               },
               {
@@ -130,12 +133,12 @@ console.dir(ast.jsNode, { depth: null })
 ## 代码生成
 
 ```js
-// 将 JS AST 当作参数传入
+// 将 JS AST 当作参数传入，得到渲染函数字符串代码
 const code = generate(ast.jsNode)
 console.log(code)
 
 // output:
-function render() {
+`return function render() {
     return h('div', [h('p', 'Vue'), h('p', 'React')])
-}
+}`
 ```

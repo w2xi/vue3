@@ -32,8 +32,10 @@ export function generate(node) {
   }
   // 执行 genNode 完成代码生成的工作
   genNode(node, context)
-  // 返回渲染函数代码
-  return context.code
+
+  return {
+    code: context.code // 渲染函数代码
+  }
 }
 
 /**

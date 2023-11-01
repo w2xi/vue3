@@ -36,8 +36,8 @@ export function transform(ast) {
     ]
   }
   traverseNode(ast, context)
-  console.log('[dump transform]:')
-  dump(ast)
+  // console.log('[dump transform]:')
+  // dump(ast)
 }
 
 /**
