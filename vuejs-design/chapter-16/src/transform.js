@@ -108,6 +108,9 @@ function transformElement(node) {
     // 作为第一个参数
     const callExp = createCallExpression('h', [createStringLiteral(node.tag)])
     // 2. 处理 h 函数调用的参数
+    // 处理 props
+    node.props.length && callExp.arguments.push(...node.props)
+    // 处理 children
     node.children.length === 1
       ? // 如果当前标签节点只有一个子节点，则直接使用子节点的 jsNode 作为参数
         callExp.arguments.push(node.children[0].jsNode)

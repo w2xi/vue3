@@ -15,22 +15,24 @@ export function compileToFunction(template) {
   return render
 }
 
-console.log(
-  '[render]:',
-  compileToFunction('<div><p>{{ msg }}</p><p>React</p></div>').toString()
+// console.log(
+//   '[render]:',
+//   compileToFunction('<div><p>{{ msg }}</p><p>React</p></div>').toString()
+// )
+
+const ast = parse(
+  '<div id="foo" class="bar"><p>{{ msg }}</p><p>React</p></div>'
 )
 
-// const ast = parse('<div><p>{{ msg }}</p><p>React</p></div>')
-
-// console.log('[模板AST]:')
-// console.dir(ast, { depth: null })
+console.log('[模板AST]:')
+console.dir(ast, { depth: null })
 
 // console.log('[dump]:')
 // dump(ast)
 
-// transform(ast)
-// console.log('[JS AST]:')
-// console.dir(ast.jsNode, { depth: null })
+transform(ast)
+console.log('[JS AST]:')
+console.dir(ast.jsNode, { depth: null })
 
 // const { code } = generate(ast.jsNode)
 // console.log('[render function string]:')
