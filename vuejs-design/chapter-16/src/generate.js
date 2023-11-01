@@ -97,6 +97,11 @@ function genFunctionDecl(node, context) {
   const { push, indent, deIndent } = context
   const args = ['_ctx']
   const signature = args.join(', ')
+
+  // 用于最后将代码字符串转为函数
+  // new Function(code)
+  push(`return `)
+
   // node.id.name 表示函数名称
   push(`function ${node.id.name}`)
   push(`(`)
