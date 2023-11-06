@@ -1,37 +1,19 @@
+import {
+  CREATE_ELEMENT_VNODE,
+  helperNameMap,
+  TO_DISPLAY_STRING
+} from './runtimeHelpers.js'
+
 /**
  * 代码生成
  * @param {Object} ast JS AST
  * @returns {String}
  */
-export function generate(node) {
-  // 上下文
-  const context = {
-    // 存储最终生成的渲染函数代码
-    code: '',
-    // 在生成代码时，通过调用 push 函数完成代码的拼接
-    push(code) {
-      context.code += code
-    },
-    /********** 一下属性和方法用于提高生成的代码字符串的可读性 **********/
-    // 当前缩进级别，初始值为0，即没有缩进
-    currentIndent: 0,
-    // 换行，即在代码字符串后面追加 \n 字符，且换行时应该保留缩进，追加 currentIndent * 2 个字符
-    newLine() {
-      context.code += '\n' + '  '.repeat(context.currentIndent * 2)
-    },
-    // 用来缩进，即让 currentIndent 自增后，调用 newLine 函数
-    indent() {
-      context.currentIndent++
-      context.newLine()
-    },
-    // 取消缩进，即让 currentIndent 自减后，调用 newLine 函数
-    deIndent() {
-      context.currentIndent--
-      context.newLine()
-    }
-  }
-  // 执行 genNode 完成代码生成的工作
-  genNode(node, context)
+export function generate(ast) {
+  // 创建上下文
+  const context = createCodegenContext()
+  genCode(ast.codegenNode, context)
+  // genNode(node, context)
 
   return {
     code: context.code // 渲染函数代码
@@ -45,28 +27,62 @@ export function generate(node) {
  */
 function genNode(node, context) {
   switch (node.type) {
-    case 'FunctionDecl':
-      genFunctionDecl(node, context)
-      break
-    case 'ReturnStatement':
-      genReturnStatement(node, context)
-      break
-    case 'CallExpression':
-      genCallExpression(node, context)
-      break
-    case 'StringLiteral':
-      genStringLiteral(node, context)
-      break
-    case 'ArrayExpression':
-      genArrayExpression(node, context)
-      break
     case 'Interpolation':
       genInterpolation(node, context)
       break
     case 'Expression':
       genExpression(node, context)
       break
+    case 'Element':
+      genElement(node, context)
+      break
+    case 'Text':
+      genText(node, context)
+      break
+    // case 'FunctionDecl':
+    //   genFunctionDecl(node, context)
+    //   break
+    // case 'ReturnStatement':
+    //   genReturnStatement(node, context)
+    //   break
+    // case 'CallExpression':
+    //   genCallExpression(node, context)
+    //   break
+    // case 'StringLiteral':
+    //   genStringLiteral(node, context)
+    //   break
+    // case 'ArrayExpression':
+    //   genArrayExpression(node, context)
+    //   break
+    // case 'Interpolation':
+    //   genInterpolation(node, context)
+    //   break
+    // case 'Expression':
+    //   genExpression(node, context)
+    //   break
   }
+}
+
+/**
+ * 生成调用表达式
+ * @param {*} node
+ * @param {*} context
+ * @example
+ *
+ * 三个参数依次是：tag props children
+ * createElementVNode('div', {}, [])
+ */
+function genElement(node, context) {
+  const { push, helper } = context
+  const { tag, props, children } = node
+  push(`${helper(CREATE_ELEMENT_VNODE)}(`)
+  genNodeList([tag, props, children], context)
+  push(`)`)
+}
+
+function genText(node, context) {
+  const { push } = context
+  push(`'${node.value}'`)
 }
 
 /**
@@ -79,10 +95,10 @@ function genNode(node, context) {
  * _ctx.msg
  */
 function genInterpolation(node, context) {
-  const { push } = context
-  // push(`(`);
+  const { push, helper } = context
+  push(`${helper(TO_DISPLAY_STRING)}(`)
   genNode(node.content, context)
-  // push(")");
+  push(`)`)
 }
 
 function genExpression(node, context) {
@@ -94,18 +110,17 @@ function genExpression(node, context) {
  * @param {Object} node JS AST
  * @param {Object} context
  */
-function genFunctionDecl(node, context) {
+function genCode(node, context) {
   // 工具函数
   const { push, indent, deIndent } = context
+  const fnName = 'render'
   const args = ['_ctx']
   const signature = args.join(', ')
 
   // 用于最后将代码字符串转为函数
   // new Function(code)
   push(`return `)
-
-  // node.id.name 表示函数名称
-  push(`function ${node.id.name}`)
+  push(`function ${fnName}`)
   push(`(`)
   // 生成函数参数代码字符串
   // genNodeList(node.params, context)
@@ -115,7 +130,8 @@ function genFunctionDecl(node, context) {
   // 缩进
   indent()
   // 为函数体生成代码，这里递归地调用 genNode 函数
-  node.body.forEach(n => genNode(n, context))
+  // node.body.forEach(n => genNode(n, context))
+  genNode(node, context)
   // 取消缩进
   deIndent()
   push(`}`)
@@ -194,9 +210,44 @@ function genNodeList(nodes, context) {
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
-    genNode(node, context)
+    if (typeof node === 'string') {
+      push(`'${node}'`)
+    } else {
+      genNode(node, context)
+    }
+    // 最后一个参数不需要逗号
     if (i < nodes.length - 1) {
       push(', ')
     }
   }
+}
+
+function createCodegenContext() {
+  const context = {
+    code: '',
+    helper(key) {
+      return `_${helperNameMap[key]}`
+    },
+    push(code) {
+      context.code += code
+    },
+    // 当前缩进级别，初始值为0，即没有缩进
+    currentIndent: 0,
+    // 换行，即在代码字符串后面追加 \n 字符，且换行时应该保留缩进，追加 currentIndent * 2 个字符
+    newLine() {
+      context.code += '\n' + '  '.repeat(context.currentIndent * 2)
+    },
+    // 用来缩进，即让 currentIndent 自增后，调用 newLine 函数
+    indent() {
+      context.currentIndent++
+      context.newLine()
+    },
+    // 取消缩进，即让 currentIndent 自减后，调用 newLine 函数
+    deIndent() {
+      context.currentIndent--
+      context.newLine()
+    }
+  }
+
+  return context
 }

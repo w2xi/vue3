@@ -27,16 +27,14 @@ const ast = parse(
 console.log('[模板AST]:')
 console.dir(ast, { depth: null })
 
-// console.log('[dump]:')
-// dump(ast)
-
 transform(ast)
 console.log('[JS AST]:')
-console.dir(ast.jsNode, { depth: null })
+// console.dir(ast, { depth: null })
+console.dir(ast.codegenNode, { depth: null })
 
-// const { code } = generate(ast.jsNode)
-// console.log('[render function string]:')
-// console.log(code)
+const { code } = generate(ast)
+console.log('[render function string]:')
+console.log(code)
 
 // output:
 // [render function string]:

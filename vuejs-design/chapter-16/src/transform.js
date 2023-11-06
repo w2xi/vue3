@@ -1,43 +1,18 @@
+import { createVNodeCall } from './ast.js'
 import { dump } from './util.js'
 
 /**
  * AST 转换
- * @param {Object} ast
+ * @param {Object} root 根节点
  */
-export function transform(ast) {
-  const context = {
-    // 当前转换的节点
-    currentNode: null,
-    // 当前节点在父节点的 children 中的位置索引
-    childIndex: 0,
-    // 当前转换节点的父节点
-    parent: null,
-    // 用于替换节点的函数，接收新节点作为参数
-    replaceNode(node) {
-      // 替换节点
-      context.parent.children[context.childIndex] = node
-      // 更新当前节点
-      context.currentNode = node
-    },
-    // 移除当前节点
-    removeNode() {
-      if (context.parent) {
-        context.parent.children.splice(context.childIndex, 1)
-        // 置空当前节点
-        context.currentNode = null
-      }
-    },
-    // 注册 nodeTransforms 数组 (解耦)
-    nodeTransforms: [
-      transformRoot,
-      transformElement,
-      transformText,
-      transformExpression
-    ]
-  }
-  traverseNode(ast, context)
-  // console.log('[dump transform]:')
-  // dump(ast)
+export function transform(root) {
+  // 1. 创建 context
+  const context = createTransformContext(root)
+
+  // 2. 遍历 ast
+  traverseNode(root, context)
+
+  createRootCodegen(root)
 }
 
 /**
@@ -78,15 +53,61 @@ function traverseNode(ast, context) {
   }
 }
 
-// =============================== AST 工具函数 ===============================
+function createTransformContext(root, options = {}) {
+  const context = {
+    // 当前转换的节点
+    currentNode: null,
+    // 当前节点在父节点的 children 中的位置索引
+    childIndex: 0,
+    // 当前转换节点的父节点
+    parent: null,
+    // 用于替换节点的函数，接收新节点作为参数
+    replaceNode(node) {
+      // 替换节点
+      context.parent.children[context.childIndex] = node
+      // 更新当前节点
+      context.currentNode = node
+    },
+    // 移除当前节点
+    removeNode() {
+      if (context.parent) {
+        context.parent.children.splice(context.childIndex, 1)
+        // 置空当前节点
+        context.currentNode = null
+      }
+    },
+    // 注册 nodeTransforms 数组 (解耦)
+    nodeTransforms: [
+      // transformRoot,
+      transformElement,
+      transformText,
+      transformExpression
+    ]
+  }
+
+  return context
+}
+
+function createRootCodegen(root) {
+  const { children } = root
+  const child = children[0]
+  if (child.type === 'Element' && child.codegenNode) {
+    const codegenNode = child.codegenNode
+    root.codegenNode = codegenNode
+  } else {
+    root.codegenNode = child
+  }
+}
+
+// =============================== transform 工具函数 ===============================
 
 function transformExpression(node) {
   if (node.type === 'Interpolation') {
     node.content = processExpression(node.content)
-    node.jsNode = {
-      type: 'Interpolation',
-      content: node.content
-    }
+    // node.jsNode = {
+    //   type: 'Interpolation',
+    //   content: node.content
+    // }
   }
 }
 
@@ -96,31 +117,37 @@ function processExpression(node) {
 }
 
 // 转换标签节点
-function transformElement(node) {
+function transformElement(node, context) {
   // 将转换代码编写在退出阶段的回调函数中，
   // 这样可以保证该标签节点的子节点全部被处理完毕、
   return () => {
     if (node.type !== 'Element') {
       return
     }
+    const tag = node.tag
+    const props = node.props
+    const children = node.children
+
+    node.codegenNode = createVNodeCall(context, tag, props, children)
+
     // 1. 创建 h 调用函数
     // h 函数的第一个参数是标签名称，因此以 node.tag 来创建一个字符串字面量节点
     // 作为第一个参数
-    const callExp = createCallExpression('h', [createStringLiteral(node.tag)])
-    // 2. 处理 h 函数调用的参数
-    // 处理 props
-    node.props.length && callExp.arguments.push(...node.props)
-    // 处理 children
-    node.children.length === 1
-      ? // 如果当前标签节点只有一个子节点，则直接使用子节点的 jsNode 作为参数
-        callExp.arguments.push(node.children[0].jsNode)
-      : // 如果当前标签节点有多个子节点，则创建一个 ArrayExpression 节点作为参数
-        callExp.arguments.push(
-          // 数组的每个元素都是子节点的 jsNode
-          createArrayExpression(node.children.map(c => c.jsNode))
-        )
-    // 3. 将当前标签节点对应的 JS AST 添加到 jsNode 属性下
-    node.jsNode = callExp
+    // const callExp = createCallExpression('h', [createStringLiteral(node.tag)])
+    // // 2. 处理 h 函数调用的参数
+    // // 处理 props
+    // node.props.length && callExp.arguments.push(...node.props)
+    // // 处理 children
+    // node.children.length === 1
+    //   ? // 如果当前标签节点只有一个子节点，则直接使用子节点的 jsNode 作为参数
+    //     callExp.arguments.push(node.children[0].jsNode)
+    //   : // 如果当前标签节点有多个子节点，则创建一个 ArrayExpression 节点作为参数
+    //     callExp.arguments.push(
+    //       // 数组的每个元素都是子节点的 jsNode
+    //       createArrayExpression(node.children.map(c => c.jsNode))
+    //     )
+    // // 3. 将当前标签节点对应的 JS AST 添加到 jsNode 属性下
+    // node.jsNode = callExp
   }
 }
 
@@ -129,7 +156,7 @@ function transformText(node) {
   if (node.type !== 'Text') {
     return
   }
-  node.jsNode = createStringLiteral(node.content)
+  // node.jsNode = createStringLiteral(node.content)
 }
 
 /**

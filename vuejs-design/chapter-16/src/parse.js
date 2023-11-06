@@ -218,8 +218,8 @@ function isEnd(context, ancestors) {
 }
 
 // console.log('开始解析:')
-const ast = parse(
-  `<div id="foo" class="bar"><p>{{ msg }}</p><p>Template</p></div>`
-)
+// const ast = parse(
+//   `<div id="foo" class="bar"><p>{{ msg }}</p><p>Template</p></div>`
+// )
 
-console.dir(ast, { depth: null })
+// console.dir(ast, { depth: null })
