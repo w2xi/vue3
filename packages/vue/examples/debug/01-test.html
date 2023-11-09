@@ -1,0 +1,19 @@
+<script src="../../dist/vue.global.js"></script>
+
+<div id="demo">
+    <p class="msg" @click="handleClick">{{ msg }}</p>
+    <p class="text" :class="foo">text</p>
+</div>
+
+<script>
+const { createApp, ref } = Vue
+
+createApp({
+    setup() {
+        return {
+            msg: 'Hi',
+            foo: 'bar',
+        }
+    }
+}).mount('#demo')
+</script>
