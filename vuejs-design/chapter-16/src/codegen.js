@@ -75,14 +75,58 @@ function genNode(node, context) {
 function genElement(node, context) {
   const { push, helper } = context
   const { tag, props, children } = node
-  push(`${helper(CREATE_ELEMENT_VNODE)}(`)
-  genNodeList([tag, props, children], context)
+  push(`${helper(CREATE_ELEMENT_VNODE)}('${tag}', `)
+
+  if (props) {
+    genProps(props, context)
+  } else {
+    push('null, ')
+  }
+  if (children) {
+    genChildren(children, context)
+  } else {
+    push('null')
+  }
+  // genNodeList([tag, props, children], context)
   push(`)`)
+}
+
+// props: [
+//   { type: 'Attribute', name: 'id', value: 'foo' },
+//   { type: 'Attribute', name: 'class', value: 'bar' }
+// ]
+// => { id: 'foo', class: 'bar' }
+//
+function genProps(props, context) {
+  const { push } = context
+  if (!props.length) {
+    push('{}, ')
+    return
+  }
+  push('{ ')
+
+  for (let i = 0; i < props.length; i++) {
+    const prop = props[i]
+    const key = prop ? prop.name : ''
+    const value = prop ? prop.value : prop
+    push(JSON.stringify(key))
+    push(': ')
+    push(JSON.stringify(value))
+
+    if (i < props.length - 1) {
+      push(', ')
+    }
+  }
+  push(' }, ')
+}
+
+function genChildren(children, context) {
+  genArrayExpression(children, context)
 }
 
 function genText(node, context) {
   const { push } = context
-  push(`'${node.value}'`)
+  push(`'${node.content}'`)
 }
 
 /**
@@ -147,31 +191,8 @@ function genArrayExpression(node, context) {
   // 追加方括号
   push('[')
   // 为数组元素生成代码
-  genNodeList(node.elements, context)
+  genNodeList(node, context)
   push(']')
-}
-
-/**
- * 生成字符串字面量
- * @param {*} node
- * @param {*} context
- */
-function genStringLiteral(node, context) {
-  const { push } = context
-  push(`'${node.value}'`)
-}
-
-/**
- * 生成 return 返回值
- * @param {*} node
- * @param {*} context
- */
-function genReturnStatement(node, context) {
-  const { push } = context
-  // 追加 return 关键字和空格
-  push(`return `)
-  // 递归地生成返回值代码
-  genNode(node.return, context)
 }
 
 /**
