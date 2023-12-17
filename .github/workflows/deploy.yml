@@ -10,16 +10,22 @@ jobs:
         version: 8
 
     # 安装依赖和打包
-    # - name: Install and Build
-      # run: pnpm install && pnpm run docs:build
+    - name: Install and Build
+      run: pnpm install && pnpm run docs:build
 
     # 部署到 GitHub Pages
     - name: Deploy vitepress docs
-      uses: jenkey2011/vuepress-deploy@master
-      env:
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        BUILD_SCRIPT: npx pnpm install && npx pnpm run docs:build
-        BUILD_DIR: docs/.vitepress/dist/
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        # 要部署的文件夹，必填
+        FOLDER: docs/.vitepress/dist
+        # 希望部署的分支，默认gh-pages
+        BRANCH: gh-pages
+      # uses: jenkey2011/vuepress-deploy@master
+      # env:
+      #   ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      #   BUILD_SCRIPT: npx pnpm install && npx pnpm run docs:build
+      #   BUILD_DIR: docs/.vitepress/dist/
       # with:
       #   # 希望部署的分支，默认gh-pages
       #   branch: gh-pages
