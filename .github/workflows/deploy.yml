@@ -1,0 +1,21 @@
+name: Build and Deploy Docs
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    # 安装依赖和打包
+    - name: Install and Build
+      run: pnpm && pnpm run docs:build
+
+    # 部署到 GitHub Pages
+    - name: Deploy vitepress docs
+      uses: JamesIves/github-pages-deploy-action@v4.3.3
+      with:
+        # 希望部署的分支，默认gh-pages
+        branch: gh-pages
+        # 打包资源的目录
+        floder: docs/.vitepress/dist
