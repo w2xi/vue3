@@ -37,7 +37,9 @@
     "build-sfc-playground-self": "cd packages/sfc-playground && npm run build",
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
-    "docs:dev": "vitepress dev docs"
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged && pnpm check",

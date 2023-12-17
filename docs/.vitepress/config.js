@@ -2,15 +2,18 @@ export default {
   title: 'Vue3 源码解析',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
-    nav: [{ text: '首页', link: '/prerequisites/debug' }],
+    nav: [{ text: '首页', link: '/' }],
     sidebar: [
       {
         text: '前置知识',
-        items: [{ text: '使用VSCode调试源码', link: '/prerequisites/debug' }]
+        items: [
+          { text: 'Proxy & Reflect', link: '/prerequisites/proxy-and-reflect' },
+          { text: '使用VSCode调试源码', link: '/prerequisites/debug' }
+        ]
       },
       {
         text: '响应式原理',
-        items: [{ text: '副作用函数', link: '/reactivity/effect-fn' }]
+        items: [{ text: '副作用函数', link: '/reactivity/effect' }]
       },
       {
         text: 'Examples',
