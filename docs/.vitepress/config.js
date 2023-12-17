@@ -1,5 +1,6 @@
 export default {
   title: 'Vue3 源码解析',
+  base: '/vue/',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [{ text: '首页', link: '/' }],
