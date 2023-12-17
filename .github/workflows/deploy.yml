@@ -20,4 +20,4 @@ jobs:
         # 希望部署的分支，默认gh-pages
         branch: gh-pages
         # 打包资源的目录
-        floder: docs/.vitepress/dist
+        folder: docs/.vitepress/dist
