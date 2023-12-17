@@ -16,8 +16,13 @@ jobs:
     # 部署到 GitHub Pages
     - name: Deploy vitepress docs
       uses: JamesIves/github-pages-deploy-action@v4.3.3
-      with:
-        # 希望部署的分支，默认gh-pages
-        branch: gh-pages
-        # 打包资源的目录
-        folder: docs/.vitepress/dist
+      env:
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        BUILD_SCRIPT: yarn && yarn docs:build
+        BUILD_DIR: docs/.vuepress/dist/
+      # with:
+      #   # 希望部署的分支，默认gh-pages
+      #   branch: gh-pages
+      #   # 打包资源的目录
+      #   folder: docs/.vitepress/dist
+      #   uses: jenkey2011/vuepress-deploy@master
