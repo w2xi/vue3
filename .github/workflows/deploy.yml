@@ -15,7 +15,7 @@ jobs:
 
     # 部署到 GitHub Pages
     - name: Deploy vitepress docs
-      uses: JamesIves/github-pages-deploy-action@v4.3.3
+      uses: jenkey2011/vuepress-deploy@master
       env:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         BUILD_SCRIPT: yarn && yarn docs:build
