@@ -18,7 +18,7 @@ jobs:
       uses: jenkey2011/vuepress-deploy@master
       env:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        BUILD_SCRIPT: yarn && yarn docs:build
+        BUILD_SCRIPT: pnpm run docs:build
         BUILD_DIR: docs/.vuepress/dist/
       # with:
       #   # 希望部署的分支，默认gh-pages
