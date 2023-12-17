@@ -17,18 +17,7 @@ jobs:
     - name: Deploy vitepress docs
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        # 要部署的文件夹，必填
+        # 要部署的文件夹
         FOLDER: docs/.vitepress/dist
-        # 希望部署的分支，默认gh-pages
+        # 部署的分支，默认 gh-pages
         BRANCH: gh-pages
-      # uses: jenkey2011/vuepress-deploy@master
-      # env:
-      #   ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-      #   BUILD_SCRIPT: npx pnpm install && npx pnpm run docs:build
-      #   BUILD_DIR: docs/.vitepress/dist/
-      # with:
-      #   # 希望部署的分支，默认gh-pages
-      #   branch: gh-pages
-      #   # 打包资源的目录
-      #   folder: docs/.vitepress/dist
-      #   uses: jenkey2011/vuepress-deploy@master
