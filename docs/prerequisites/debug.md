@@ -1,5 +1,9 @@
 # 使用VSCode调试源码
 
+之前发布在掘金，移到 Github 后发现图片直接被 ban 了，emm...
+
+https://juejin.cn/post/7300118821532172303 (后面再把图片移过来把)
+
 ## 1. clone vue3源码到本地
 
 ```bash
