@@ -9,7 +9,7 @@ export default {
         text: '前置知识',
         items: [
           { text: 'Proxy & Reflect', link: '/prerequisites/proxy-and-reflect' },
-          { text: '使用VSCode调试源码', link: '/prerequisites/debug' }
+          { text: '使用VSCode调试源码', link: '/prerequisites/debug-with-vscode' }
         ]
       },
       {
