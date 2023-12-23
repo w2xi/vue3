@@ -2,6 +2,7 @@ export default {
   title: 'Vue3 源码解析',
   base: '/vue3/',
   themeConfig: {
+    outline: [2, 3],
     // https://vitepress.dev/reference/default-theme-config
     nav: [{ text: '首页', link: '/' }],
     sidebar: [
@@ -13,7 +14,7 @@ export default {
         ]
       },
       {
-        text: '响应式原理',
+        text: '响应式系统',
         items: [{ text: '副作用函数', link: '/reactivity/effect' }]
       },
       {
