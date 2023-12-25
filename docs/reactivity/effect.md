@@ -115,3 +115,74 @@ setTimeout(() => {
 
 ## 设计一个完善的响应式系统
 
+在上一节中，我们了解了响应式数据的实现方式，并且实现了微型的响应式系统，但是目前还有不少问题需要解决，例如，我们硬编码了副作用函数 `effect` 的名字，导致名字一旦被改变，代码就不能正常工作。
+
+接下来我们来解决这一点 `effect` 硬编码的问题。
+
+```js{4}
+// 存储被注册的副作用函数
+let activeEffect
+// effect 用于注册副作用函数
+function effect(fn) {
+  activeEffect = fn
+  // 执行副作用函数
+  fn()
+}
+```
+
+如上代码所示，我们重新定义了 `effect ` 函数，它用来注册副作用函数，并接受一个参数 `fn` ——即要注册的副作用函数，我们可以这样使用:
+
+```js{4}
+effect(
+  // 一个匿名的副作用函数
+  () => {
+  document.body.innerText = obj.text
+})
+```
+
+同时，修改下拦截部分的代码逻辑。
+
+```js{4}
+const obj = new Proxy(data, {
+  // 拦截读取操作
+  get(target, prop, receiver) {
+    if (activeEffect) {
+      // 将副作用函数存储到桶中
+      bucket.add(activeEffect)
+    }
+    return Reflect.get(target, prop, receiver)
+  },
+  // 拦截设置操作
+  set(target, prop, value, receiver) {
+    const result = Reflect.set(target, prop, value, receiver)
+    // 执行副作用函数
+    bucket.forEach(fn => fn())
+    return result
+  }
+})
+```
+
+稍微测试一下:
+
+```js{4}
+// 代码示例：02-how-to-design-a-reactivity-system.html
+
+effect(() => {
+  document.body.innerText = obj.text
+})
+```
+
+到这里，我们已经**解决了副作用函数 `effect` 硬编码的问题**。
+
+现在，我们稍微测试一下刚刚实现的代码，比如在 响应式数据 `obj` 对象上设置一个不存在的属性：
+
+```js{4}
+// 代码示例：03-how-to-design-a-reactivity-system2.html
+
+setTimeout(() => {
+  // 在副作用中并没有读取该属性
+  obj.noExist = 'test'
+}, 1000)
+```
+
+运行代码发现
