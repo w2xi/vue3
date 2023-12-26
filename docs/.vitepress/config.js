@@ -1,6 +1,6 @@
 export default {
-  title: 'Vue3 源码解析',
-  base: '/vue3/',
+  title: 'Vue3 Analysis',
+  base: '/vue3-analysis/',
   themeConfig: {
     outline: [2, 3],
     // https://vitepress.dev/reference/default-theme-config
