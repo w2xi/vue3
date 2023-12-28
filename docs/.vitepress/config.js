@@ -15,15 +15,15 @@ export default {
       },
       {
         text: '响应式系统',
-        items: [{ text: '副作用函数', link: '/reactivity/effect' }]
+        // items: [{ text: '副作用函数', link: '/reactivity/effect' }]
       },
-      {
-        text: 'Examples',
-        items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
-        ]
-      }
+      // {
+      //   text: 'Examples',
+      //   items: [
+      //     { text: 'Markdown Examples', link: '/markdown-examples' },
+      //     { text: 'Runtime API Examples', link: '/api-examples' }
+      //   ]
+      // }
     ],
     socialLinks: [{ icon: 'github', link: 'https://github.com/w2xi/vue3' }]
   }
