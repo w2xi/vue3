@@ -75,7 +75,8 @@ function genNode(node, context) {
 function genElement(node, context) {
   const { push, helper } = context
   const { tag, props, children } = node
-  push(`${helper(CREATE_ELEMENT_VNODE)}('${tag}', `)
+  // push(`${helper(CREATE_ELEMENT_VNODE)}('${tag}', `)
+  push(`h('${tag}', `)
 
   if (props) {
     genProps(props, context)
@@ -151,6 +152,7 @@ function genExpression(node, context) {
 
 /**
  * 以渲染函数为例，生成类似 `function render(...)  { return ... }` 代码字符串
+ with(ctx) {...}
  * @param {Object} node JS AST
  * @param {Object} context
  */
@@ -164,8 +166,9 @@ function genCode(node, context) {
   // 用于最后将代码字符串转为函数
   // new Function(code)
   push(`return `)
-  push(`function ${fnName}`)
-  push(`(`)
+  push(`function ${fnName} (`)
+
+  // push(`with(_ctx`)
   // 生成函数参数代码字符串
   // genNodeList(node.params, context)
   push(signature)
@@ -173,6 +176,7 @@ function genCode(node, context) {
   push(`{`)
   // 缩进
   indent()
+  push('return ')
   // 为函数体生成代码，这里递归地调用 genNode 函数
   // node.body.forEach(n => genNode(n, context))
   genNode(node, context)

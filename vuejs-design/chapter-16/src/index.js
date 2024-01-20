@@ -2,7 +2,6 @@ import { baseCompile } from './compile.js'
 import { generate } from './codegen.js'
 import { parse } from './parse.js'
 import { transform } from './transform.js'
-import { dump } from './util.js'
 
 /**
  * 将模板编译为渲染函数
